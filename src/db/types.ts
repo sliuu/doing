@@ -20,7 +20,7 @@ export interface Task {
   title: string;
   emoji: string | null;
   category: string;
-  isEasyWin: boolean;
+  isSelfCare: boolean;
   isSeed: boolean;
   size: TaskSize | null;
   recurring: boolean;
@@ -30,6 +30,10 @@ export interface Task {
   subtasks: Subtask[];
   orderIndex: number;
   createdAt: string;
+  hideOnNoWorkDays: boolean;
+  hideOnLowEnergyDays: boolean;
+  excludedDates: string[]; // logical day keys excluded from a recurring task's occurrences
+  selfCareSection: string | null;
 }
 
 export interface TaskInstance {
@@ -58,7 +62,7 @@ export interface TaskRow {
   title: string;
   emoji: string | null;
   category: string;
-  is_easy_win: number;
+  is_self_care: number;
   is_seed: number;
   size: TaskSize | null;
   recurring: number;
@@ -68,6 +72,10 @@ export interface TaskRow {
   subtasks: string;
   order_index: number;
   created_at: string;
+  hide_on_no_work_days: number;
+  hide_on_low_energy_days: number;
+  excluded_dates: string;
+  self_care_section: string | null;
 }
 
 export interface TaskInstanceRow {
@@ -92,7 +100,7 @@ export function taskFromRow(row: TaskRow): Task {
     title: row.title,
     emoji: row.emoji,
     category: row.category,
-    isEasyWin: row.is_easy_win === 1,
+    isSelfCare: row.is_self_care === 1,
     isSeed: row.is_seed === 1,
     size: row.size,
     recurring: row.recurring === 1,
@@ -102,6 +110,10 @@ export function taskFromRow(row: TaskRow): Task {
     subtasks: JSON.parse(row.subtasks),
     orderIndex: row.order_index,
     createdAt: row.created_at,
+    hideOnNoWorkDays: row.hide_on_no_work_days === 1,
+    hideOnLowEnergyDays: row.hide_on_low_energy_days === 1,
+    excludedDates: JSON.parse(row.excluded_dates),
+    selfCareSection: row.self_care_section,
   };
 }
 

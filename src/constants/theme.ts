@@ -7,35 +7,30 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+/** A single fixed dark-maroon aesthetic — intentionally the same in both schemes. */
+const palette = {
+  text: '#F1E3D6',
+  background: '#190a0a',
+  backgroundElement: '#2b1414',
+  backgroundSelected: '#3d1c1c',
+  textSecondary: '#b08d83',
+  primary: '#e9cda2',
+  primarySoft: '#3a2a1c',
+  scheduled: '#93a3c9',
+  scheduledSoft: '#23283a',
+  today: '#d8b26b',
+  todaySoft: '#3a2e18',
+  danger: '#e2666b',
+  border: '#4a2424',
+  surface: '#1f0e0e',
+  pill: '#f2e6d8',
+  pillText: '#3a1414',
+  tabActive: 'rgba(233, 205, 162, 0.16)',
+} as const;
+
 export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-    primary: '#9B8AFB',
-    primarySoft: '#EDE9FE',
-    scheduled: '#5B8DEF',
-    scheduledSoft: '#E3EBFC',
-    today: '#4CAF8A',
-    todaySoft: '#E1F3EC',
-    danger: '#E0607E',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-    primary: '#B9ACFF',
-    primarySoft: '#2A2540',
-    scheduled: '#7EA6FF',
-    scheduledSoft: '#1E2A40',
-    today: '#6FD3AE',
-    todaySoft: '#1B332B',
-    danger: '#E88AA1',
-  },
+  light: palette,
+  dark: palette,
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;

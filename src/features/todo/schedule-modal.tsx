@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { DatePickerField } from '@/features/shared/date-picker-field';
 
 import { TodoItem } from '@/features/todo/types';
 
@@ -20,15 +21,14 @@ export function ScheduleModal({
   onSchedule: (dateKey: string | null) => void;
 }) {
   const theme = useTheme();
-  const [customDate, setCustomDate] = useState(item.instance?.scheduledDate ?? '');
+  const [customDate, setCustomDate] = useState(item.instance?.scheduledDate ?? todayKey);
 
   return (
     <Modal transparent animationType="fade" onRequestClose={onCancel}>
-      <View style={styles.backdrop}>
+      <Pressable style={styles.backdrop} onPress={onCancel}>
+        <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardWrapper}>
         <ThemedView style={[styles.card, { backgroundColor: theme.background }]} type="background">
-          <ThemedText type="subtitle">
-            {item.task.emoji ?? '📝'} {item.task.title}
-          </ThemedText>
+          <ThemedText type="subtitle">{item.task.title}</ThemedText>
 
           <Pressable
             onPress={() => onSchedule(todayKey)}
@@ -37,14 +37,8 @@ export function ScheduleModal({
           </Pressable>
 
           <View style={styles.field}>
-            <ThemedText themeColor="textSecondary">Or pick a date (YYYY-MM-DD)</ThemedText>
-            <TextInput
-              value={customDate}
-              onChangeText={setCustomDate}
-              placeholder={todayKey}
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
-            />
+            <ThemedText themeColor="textSecondary">Or pick a date</ThemedText>
+            <DatePickerField value={customDate} onChange={setCustomDate} />
             <Pressable
               onPress={() => customDate.trim() !== '' && onSchedule(customDate.trim())}
               style={[styles.optionButton, { backgroundColor: theme.scheduledSoft }]}>
@@ -63,7 +57,8 @@ export function ScheduleModal({
             </Pressable>
           </View>
         </ThemedView>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
@@ -75,6 +70,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: Spacing.four,
   },
+  cardWrapper: {
+    width: '100%',
+  },
   card: {
     borderRadius: Spacing.three,
     padding: Spacing.four,
@@ -82,12 +80,6 @@ const styles = StyleSheet.create({
   },
   field: {
     gap: Spacing.one,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: Spacing.two,
-    padding: Spacing.two,
-    fontSize: 16,
   },
   optionButton: {
     paddingVertical: Spacing.two,

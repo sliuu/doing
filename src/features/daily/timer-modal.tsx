@@ -1,30 +1,41 @@
+import { useEffect, useRef } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useAudioPlayer } from 'expo-audio';
+import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getLiveDurationSeconds } from '@/db/instances';
-import { formatTimer } from '@/lib/format';
+import { formatDurationShort, formatTimer } from '@/lib/format';
 
-import { DailyItem } from '@/features/daily/types';
+import { DailyItem, DayMode, effectiveExpectedMinutes } from '@/features/daily/types';
+import { PieProgress } from '@/features/daily/pie-progress';
+import { DurationPicker } from '@/features/shared/duration-picker';
 
 const ADJUST_STEPS_SECONDS = [-60, 60, 600];
+const PIE_SIZE = 200;
+const GONG_SOUND = require('../../../assets/sounds/gong.wav');
 
 export function TimerModal({
   item,
   now,
+  dayMode,
   onToggleRunning,
   onAdjust,
   onToggleSubtask,
+  onChangeExpectedDuration,
   onComplete,
   onClose,
 }: {
   item: DailyItem;
   now: number;
+  dayMode: DayMode;
   onToggleRunning: () => void;
   onAdjust: (deltaSeconds: number) => void;
   onToggleSubtask: (subtaskId: string, done: boolean) => void;
+  onChangeExpectedDuration: (totalMinutes: number) => void;
   onComplete: () => void;
   onClose: () => void;
 }) {
@@ -33,25 +44,82 @@ export function TimerModal({
   // `now` forces a re-render every second so the displayed time ticks while running.
   void now;
   const liveSeconds = getLiveDurationSeconds(instance);
-  const expectedSeconds = task.expectedDuration ? task.expectedDuration * 60 : null;
+  const expectedMinutes = effectiveExpectedMinutes(task.expectedDuration, dayMode);
+  const expectedSeconds = expectedMinutes ? expectedMinutes * 60 : null;
   const reachedExpected = expectedSeconds !== null && liveSeconds >= expectedSeconds;
   const isRunning = instance.timerState === 'running';
 
+  const fraction = expectedSeconds ? liveSeconds / expectedSeconds : 0;
+  const remainingSeconds = expectedSeconds === null ? liveSeconds : Math.max(0, expectedSeconds - liveSeconds);
+  const overtimeSeconds = expectedSeconds === null ? 0 : Math.max(0, liveSeconds - expectedSeconds);
+
+  const gongPlayer = useAudioPlayer(GONG_SOUND);
+  // Skip the chime if the modal is opened already past the expected duration — it should only fire on the live transition.
+  const hasChimedRef = useRef(reachedExpected);
+
+  useEffect(() => {
+    if (reachedExpected && !hasChimedRef.current) {
+      hasChimedRef.current = true;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      gongPlayer.seekTo(0);
+      gongPlayer.play();
+    }
+    if (!reachedExpected) {
+      hasChimedRef.current = false;
+    }
+  }, [reachedExpected, gongPlayer]);
+
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
+      <Pressable style={styles.backdrop} onPress={onClose}>
+        <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardWrapper}>
         <ThemedView style={[styles.card, { backgroundColor: theme.background }]} type="background">
-          <ThemedText type="subtitle">
-            {task.emoji ?? '📝'} {task.title}
-          </ThemedText>
+          <ThemedText type="subtitle">{task.title}</ThemedText>
 
-          <ThemedText style={styles.clock} themeColor={reachedExpected ? 'today' : 'text'}>
-            {formatTimer(liveSeconds)}
-          </ThemedText>
-          {reachedExpected && (
-            <ThemedText themeColor="today" style={{ textAlign: 'center' }}>
-              🔔 expected time reached — keep going if you like
+          <View style={styles.targetRow}>
+            <ThemedText type="small" themeColor="textSecondary">
+              Target
             </ThemedText>
+            {isRunning ? (
+              <ThemedText type="small">
+                {expectedSeconds !== null ? formatDurationShort(expectedSeconds) : 'Not set'}
+              </ThemedText>
+            ) : (
+              <View style={{ flex: 1 }}>
+                <DurationPicker totalMinutes={task.expectedDuration ?? 0} onChange={onChangeExpectedDuration} />
+              </View>
+            )}
+          </View>
+
+          {expectedSeconds !== null ? (
+            <View style={styles.pieWrap}>
+              <PieProgress
+                size={PIE_SIZE}
+                fraction={fraction}
+                color={reachedExpected ? theme.today : theme.primary}
+                trackColor={theme.backgroundElement}
+              />
+              <View style={styles.pieCenter}>
+                <ThemedText style={styles.clock} themeColor={reachedExpected ? 'today' : 'text'}>
+                  {formatTimer(remainingSeconds)}
+                </ThemedText>
+              </View>
+            </View>
+          ) : (
+            <ThemedText style={styles.clock} themeColor="text">
+              {formatTimer(liveSeconds)}
+            </ThemedText>
+          )}
+
+          {reachedExpected && (
+            <View style={{ alignItems: 'center', gap: 2 }}>
+              <ThemedText themeColor="today" style={{ textAlign: 'center' }}>
+                expected time reached — keep going if you like
+              </ThemedText>
+              <ThemedText style={styles.overtimeClock} themeColor="today">
+                +{formatTimer(overtimeSeconds)}
+              </ThemedText>
+            </View>
           )}
 
           <Pressable
@@ -105,7 +173,8 @@ export function TimerModal({
             </Pressable>
           </View>
         </ThemedView>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
@@ -117,13 +186,42 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: Spacing.four,
   },
+  cardWrapper: {
+    width: '100%',
+  },
   card: {
     borderRadius: Spacing.three,
     padding: Spacing.four,
     gap: Spacing.three,
   },
+  targetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  pieWrap: {
+    alignSelf: 'center',
+    width: PIE_SIZE,
+    height: PIE_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pieCenter: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   clock: {
-    fontSize: 48,
+    fontFamily: Fonts.serif,
+    fontSize: 44,
+    lineHeight: 52,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  overtimeClock: {
+    fontFamily: Fonts.serif,
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: '600',
     textAlign: 'center',
   },

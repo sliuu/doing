@@ -14,7 +14,7 @@ export function scheduleStateFor(item: TodoItem, todayKey: string): ScheduleStat
 }
 
 export const SIZE_SECTIONS: { key: TaskSize; label: string }[] = [
-  { key: 'large', label: 'Large (3h+)' },
-  { key: 'medium', label: 'Medium (1-2h)' },
-  { key: 'small', label: 'Small (<30m)' },
+  { key: 'large', label: 'big tasks (3+ hours)' },
+  { key: 'medium', label: 'medium tasks (1-2 hours)' },
+  { key: 'small', label: 'small tasks (<1 hour)' },
 ];

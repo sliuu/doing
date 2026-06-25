@@ -4,20 +4,24 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getLiveDurationSeconds } from '@/db/instances';
-import { formatDurationShort } from '@/lib/format';
+import { formatDurationShort, formatTimer } from '@/lib/format';
 
-import { DailyItem } from '@/features/daily/types';
+import { DailyItem, DayMode, effectiveExpectedMinutes } from '@/features/daily/types';
 
 export function TaskRow({
   item,
   now,
+  dayMode,
   onToggleComplete,
   onStartTimer,
+  onPress,
 }: {
   item: DailyItem;
   now: number;
+  dayMode: DayMode;
   onToggleComplete: () => void;
   onStartTimer: () => void;
+  onPress: () => void;
 }) {
   const theme = useTheme();
   const { task, instance } = item;
@@ -25,13 +29,27 @@ export function TaskRow({
   // `now` forces a re-render every second so the live duration ticks while running.
   void now;
   const liveSeconds = getLiveDurationSeconds(instance);
+  const expectedMinutes = effectiveExpectedMinutes(task.expectedDuration, dayMode);
+  const expectedSeconds = expectedMinutes ? expectedMinutes * 60 : null;
+  const hasLogged = liveSeconds > 0 || isRunning;
+  // Second-level precision while running so the number visibly counts up; coarser once stopped.
+  const liveLabel = isRunning ? formatTimer(liveSeconds) : formatDurationShort(liveSeconds);
+  const durationLabel =
+    expectedSeconds !== null
+      ? hasLogged
+        ? `${liveLabel}/${formatDurationShort(expectedSeconds)}`
+        : formatDurationShort(expectedSeconds)
+      : liveLabel;
 
   return (
-    <View style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
+    <Pressable onPress={onPress} style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: instance.completed }}
-        onPress={onToggleComplete}
+        onPress={(e) => {
+          e.stopPropagation();
+          onToggleComplete();
+        }}
         style={[
           styles.checkbox,
           { borderColor: theme.primary },
@@ -39,8 +57,6 @@ export function TaskRow({
         ]}>
         {instance.completed && <ThemedText style={{ color: '#fff' }}>✓</ThemedText>}
       </Pressable>
-
-      <ThemedText style={styles.emoji}>{task.emoji ?? '📝'}</ThemedText>
 
       <View style={{ flex: 1 }}>
         <ThemedText
@@ -57,23 +73,26 @@ export function TaskRow({
       </View>
 
       {task.tracksDuration && (
-        <View style={{ alignItems: 'flex-end', gap: 2 }}>
-          {(liveSeconds > 0 || isRunning) && (
-            <ThemedText type="small" themeColor={isRunning ? 'today' : 'textSecondary'}>
-              {isRunning ? '● ' : ''}
-              {formatDurationShort(liveSeconds)}
-            </ThemedText>
-          )}
+        <View style={styles.durationRow}>
+          <ThemedText type="small" themeColor={isRunning ? 'today' : 'textSecondary'}>
+            {isRunning ? '● ' : ''}
+            {durationLabel}
+          </ThemedText>
           {!instance.completed && (
-            <Pressable onPress={onStartTimer} style={[styles.startButton, { backgroundColor: theme.primarySoft }]}>
-              <ThemedText type="small" themeColor="primary">
-                {isRunning || instance.timerState === 'paused' ? 'Resume' : 'Start'}
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                onStartTimer();
+              }}
+              style={[styles.startButton, { backgroundColor: isRunning ? theme.todaySoft : theme.primarySoft }]}>
+              <ThemedText type="small" themeColor={isRunning ? 'today' : 'primary'}>
+                {isRunning ? 'Running' : instance.timerState === 'paused' ? 'Resume' : 'Start'}
               </ThemedText>
             </Pressable>
           )}
         </View>
       )}
-    </View>
+    </Pressable>
   );
 }
 
@@ -93,11 +112,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emoji: {
-    fontSize: 20,
-  },
   strikethrough: {
     textDecorationLine: 'line-through',
+  },
+  durationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
   startButton: {
     paddingHorizontal: Spacing.two,

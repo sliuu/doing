@@ -11,31 +11,27 @@ export function TodoRow({
   todayKey,
   onToggleComplete,
   onSchedule,
+  onEdit,
 }: {
   item: TodoItem;
   todayKey: string;
   onToggleComplete: () => void;
   onSchedule: () => void;
+  onEdit: () => void;
 }) {
   const theme = useTheme();
   const { task, instance } = item;
   const completed = instance?.completed ?? false;
   const scheduleState = scheduleStateFor(item, todayKey);
 
-  const highlightColor =
-    scheduleState === 'today' ? theme.todaySoft : scheduleState === 'scheduled' ? theme.scheduledSoft : theme.backgroundElement;
+  const borderColor =
+    scheduleState === 'today' ? theme.today : scheduleState === 'scheduled' ? theme.scheduled : theme.backgroundSelected;
 
   return (
-    <View style={[styles.row, { backgroundColor: highlightColor }]}>
-      <Pressable
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: completed }}
-        onPress={onToggleComplete}
-        style={[styles.checkbox, { borderColor: theme.primary }, completed && { backgroundColor: theme.primary }]}>
-        {completed && <ThemedText style={{ color: '#fff' }}>✓</ThemedText>}
-      </Pressable>
-
-      <ThemedText style={styles.emoji}>{task.emoji ?? '📝'}</ThemedText>
+    <Pressable onPress={onEdit} style={[styles.row, { borderColor }]}>
+      <ThemedText themeColor="textSecondary" style={styles.handle}>
+        ⋮
+      </ThemedText>
 
       <View style={{ flex: 1 }}>
         <ThemedText
@@ -57,13 +53,29 @@ export function TodoRow({
       </View>
 
       {!completed && (
-        <Pressable onPress={onSchedule} style={[styles.scheduleButton, { backgroundColor: theme.primarySoft }]}>
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation();
+            onSchedule();
+          }}
+          style={[styles.scheduleButton, { backgroundColor: theme.primarySoft }]}>
           <ThemedText type="small" themeColor="primary">
             Schedule
           </ThemedText>
         </Pressable>
       )}
-    </View>
+
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: completed }}
+        onPress={(e) => {
+          e.stopPropagation();
+          onToggleComplete();
+        }}
+        style={[styles.checkbox, { borderColor: theme.primary }, completed && { backgroundColor: theme.primary }]}>
+        {completed && <ThemedText style={{ color: '#fff' }}>✓</ThemedText>}
+      </Pressable>
+    </Pressable>
   );
 }
 
@@ -73,7 +85,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     padding: Spacing.three,
-    borderRadius: Spacing.two,
+    borderRadius: Spacing.three,
+    borderWidth: 1,
+  },
+  handle: {
+    fontSize: 16,
   },
   checkbox: {
     width: 24,
@@ -82,9 +98,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  emoji: {
-    fontSize: 20,
   },
   strikethrough: {
     textDecorationLine: 'line-through',

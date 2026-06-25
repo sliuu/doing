@@ -3,13 +3,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { useDb } from '@/db/provider';
 import { getSettings } from '@/db/settings';
 import {
+  adjustDuration,
   completeInstance,
   getOrCreateTodoInstance,
   listInstancesForTask,
   setScheduledDate,
   uncompleteInstance,
 } from '@/db/instances';
-import { createTask, listTasks, NewTaskInput } from '@/db/tasks';
+import { createTask, deleteTask, listTasks, NewTaskInput, updateTask } from '@/db/tasks';
 import { todayKey } from '@/lib/day';
 import type { TaskSize } from '@/db/types';
 
@@ -41,7 +42,7 @@ export function useTodo() {
   const refresh = useCallback(async () => {
     const { dayStartHour } = await getSettings(db);
     const key = todayKey(dayStartHour);
-    const tasks = await listTasks(db, { recurring: false, isEasyWin: false });
+    const tasks = await listTasks(db, { recurring: false, isSelfCare: false });
     const items: TodoItem[] = [];
     for (const task of tasks) {
       const instances = await listInstancesForTask(db, task.id);
@@ -83,7 +84,6 @@ export function useTodo() {
         const completedAt = opts?.completedDateKey ? `${opts.completedDateKey}T12:00:00.000Z` : undefined;
         await completeInstance(db, instance.id, {
           durationSeconds: opts?.durationSeconds,
-          notes: opts?.notes,
           completedAt,
         });
       }
@@ -92,5 +92,30 @@ export function useTodo() {
     [db, refresh]
   );
 
-  return { loading, sections, today, refresh, addTask, schedule, toggleComplete };
+  const addTime = useCallback(
+    async (item: TodoItem, deltaSeconds: number) => {
+      const instance = await getOrCreateTodoInstance(db, item.task.id, item.task.createdAt);
+      await adjustDuration(db, instance.id, deltaSeconds);
+      await refresh();
+    },
+    [db, refresh]
+  );
+
+  const editTask = useCallback(
+    async (taskId: string, patch: Parameters<typeof updateTask>[2]) => {
+      await updateTask(db, taskId, patch);
+      await refresh();
+    },
+    [db, refresh]
+  );
+
+  const removeTask = useCallback(
+    async (taskId: string) => {
+      await deleteTask(db, taskId);
+      await refresh();
+    },
+    [db, refresh]
+  );
+
+  return { loading, sections, today, refresh, addTask, schedule, toggleComplete, addTime, editTask, removeTask };
 }

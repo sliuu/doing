@@ -2,53 +2,46 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { createTask } from '@/db/tasks';
 
-// 0 = Sunday .. 6 = Saturday, matching RecurrenceRule.weekly.daysOfWeek.
-const SEED_EASY_WINS: { title: string; emoji: string; dayOfWeek: number }[] = [
-  { title: "Name three things you're grateful for today", emoji: '🙏', dayOfWeek: 0 },
-  { title: 'Go on a short walk to get some fresh air', emoji: '🚶', dayOfWeek: 0 },
-  { title: 'Light a candle or use a scent you like', emoji: '🕯️', dayOfWeek: 0 },
-
-  { title: 'Name one small win today', emoji: '🏆', dayOfWeek: 1 },
-  { title: 'Do 5 squats', emoji: '🏋️', dayOfWeek: 1 },
-  { title: 'Tidy your desk or one surface for 5 minutes', emoji: '🧹', dayOfWeek: 1 },
-
-  { title: 'Name one thing you like about yourself', emoji: '💛', dayOfWeek: 2 },
-  { title: 'Spend 5 minutes stretching', emoji: '🤸', dayOfWeek: 2 },
-  { title: 'Refill your water bottle and drink a glass', emoji: '💧', dayOfWeek: 2 },
-
-  { title: "Write down one thing you're looking forward to", emoji: '✨', dayOfWeek: 3 },
-  { title: 'Take one minute to breathe deeply', emoji: '🌬️', dayOfWeek: 3 },
-  { title: 'Put on a favorite song and dance for one song', emoji: '💃', dayOfWeek: 3 },
-
-  { title: 'Do a 5 minute grounding meditation', emoji: '🧘', dayOfWeek: 4 },
-  { title: 'Send a kind text to a friend', emoji: '💬', dayOfWeek: 4 },
-  { title: 'Make a cup of tea', emoji: '🍵', dayOfWeek: 4 },
-
-  { title: 'Write down one worry and one way to let it go', emoji: '📝', dayOfWeek: 5 },
-  { title: 'Spend 5 minutes cleaning around the house', emoji: '🧽', dayOfWeek: 5 },
-  { title: 'Do a quick body scan and notice how you feel', emoji: '🌀', dayOfWeek: 5 },
-
-  { title: 'Give yourself a compliment out loud', emoji: '😊', dayOfWeek: 6 },
-  { title: 'Delete 20 photos from your camera roll', emoji: '📷', dayOfWeek: 6 },
-  { title: 'Step outside and look at the sky for a minute', emoji: '🌤️', dayOfWeek: 6 },
+const SEED_SELF_CARE: { title: string; section: string }[] = [
+  { title: "Name three things you're grateful for today", section: 'gratitude' },
+  { title: 'Go on a short walk to get some fresh air', section: 'energizing' },
+  { title: 'Light a candle or use a scent you like', section: 'energizing' },
+  { title: 'Name one small win today', section: 'gratitude' },
+  { title: 'Do 5 squats', section: 'energizing' },
+  { title: 'Tidy your desk or one surface for 5 minutes', section: 'cleaning' },
+  { title: 'Name one thing you like about yourself', section: 'gratitude' },
+  { title: 'Spend 5 minutes stretching', section: 'energizing' },
+  { title: 'Refill your water bottle and drink a glass', section: 'energizing' },
+  { title: "Write down one thing you're looking forward to", section: 'gratitude' },
+  { title: 'Take one minute to breathe deeply', section: 'calming' },
+  { title: 'Put on a favorite song and dance for one song', section: 'fun' },
+  { title: 'Do a 5 minute grounding meditation', section: 'calming' },
+  { title: 'Send a kind text to a friend', section: 'gratitude' },
+  { title: 'Make a cup of tea', section: 'calming' },
+  { title: 'Write down one worry and one way to let it go', section: 'calming' },
+  { title: 'Spend 5 minutes cleaning around the house', section: 'cleaning' },
+  { title: 'Do a quick body scan and notice how you feel', section: 'calming' },
+  { title: 'Give yourself a compliment out loud', section: 'gratitude' },
+  { title: 'Delete 20 photos from your camera roll', section: 'cleaning' },
+  { title: 'Step outside and look at the sky for a minute', section: 'gratitude' },
 ];
 
-/** Inserts the 21-item Easy Wins seed library on first run only. */
-export async function ensureEasyWinSeed(db: SQLiteDatabase): Promise<void> {
+/** Inserts the 21-item Self-Care seed library on first run only. */
+export async function ensureSelfCareSeed(db: SQLiteDatabase): Promise<void> {
   const existing = await db.getFirstAsync<{ count: number }>(
     'SELECT COUNT(*) as count FROM tasks WHERE is_seed = 1'
   );
   if (existing && existing.count > 0) return;
 
-  for (const item of SEED_EASY_WINS) {
+  for (const { title, section } of SEED_SELF_CARE) {
     await createTask(db, {
-      title: item.title,
-      emoji: item.emoji,
+      title,
       category: 'self-care',
-      isEasyWin: true,
+      selfCareSection: section,
+      isSelfCare: true,
       isSeed: true,
       recurring: true,
-      recurrenceRule: { freq: 'weekly', daysOfWeek: [item.dayOfWeek] },
+      recurrenceRule: { freq: 'daily' },
       tracksDuration: false,
     });
   }

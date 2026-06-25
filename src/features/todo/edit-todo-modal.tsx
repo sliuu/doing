@@ -6,30 +6,34 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { NewTaskInput } from '@/db/tasks';
-import type { TaskSize } from '@/db/types';
+import type { Task, TaskSize } from '@/db/types';
 import { createId } from '@/lib/id';
 
 import { CategoryPicker } from '@/features/shared/category-picker';
 import { useCategories } from '@/features/shared/use-categories';
 import { SIZE_SECTIONS } from '@/features/todo/types';
 
-export function NewTodoModal({
-  defaultSize,
+export function EditTodoModal({
+  task,
   onCancel,
-  onSubmit,
+  onSave,
+  onDelete,
 }: {
-  defaultSize: TaskSize;
+  task: Task;
   onCancel: () => void;
-  onSubmit: (input: NewTaskInput) => void;
+  onSave: (patch: Partial<NewTaskInput>) => void;
+  onDelete: () => void;
 }) {
   const theme = useTheme();
   const categories = useCategories();
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('uncategorized');
-  const [size, setSize] = useState<TaskSize>(defaultSize);
-  const [tracksDuration, setTracksDuration] = useState(false);
-  const [expectedDuration, setExpectedDuration] = useState('');
-  const [subtasks, setSubtasks] = useState<{ id: string; title: string }[]>([]);
+  const [title, setTitle] = useState(task.title);
+  const [category, setCategory] = useState(task.category);
+  const [size, setSize] = useState<TaskSize>(task.size ?? 'medium');
+  const [tracksDuration, setTracksDuration] = useState(task.tracksDuration);
+  const [expectedDuration, setExpectedDuration] = useState(
+    task.expectedDuration != null ? String(task.expectedDuration) : ''
+  );
+  const [subtasks, setSubtasks] = useState(task.subtasks);
   const [subtaskDraft, setSubtaskDraft] = useState('');
 
   const addSubtask = () => {
@@ -42,16 +46,14 @@ export function NewTodoModal({
     setSubtasks((prev) => prev.filter((s) => s.id !== id));
   };
 
-  const canSubmit = title.trim() !== '';
+  const canSave = title.trim() !== '';
 
-  const handleSubmit = () => {
-    if (!canSubmit) return;
-    onSubmit({
+  const handleSave = () => {
+    if (!canSave) return;
+    onSave({
       title: title.trim(),
       category,
       size,
-      recurring: false,
-      recurrenceRule: null,
       tracksDuration,
       expectedDuration: tracksDuration && expectedDuration !== '' ? Number(expectedDuration) : null,
       subtasks,
@@ -64,7 +66,7 @@ export function NewTodoModal({
         <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardWrapper}>
         <ThemedView style={[styles.card, { backgroundColor: theme.background }]} type="background">
           <ScrollView contentContainerStyle={{ gap: Spacing.three }}>
-            <ThemedText type="subtitle">New to-do</ThemedText>
+            <ThemedText type="subtitle">Edit to-do</ThemedText>
 
             <View style={styles.field}>
               <ThemedText themeColor="textSecondary">Title</ThemedText>
@@ -145,17 +147,21 @@ export function NewTodoModal({
             </View>
 
             <View style={styles.actions}>
+              <Pressable onPress={onDelete} style={styles.actionButton}>
+                <ThemedText style={{ color: theme.danger }}>Delete</ThemedText>
+              </Pressable>
+              <View style={{ flex: 1 }} />
               <Pressable onPress={onCancel} style={styles.actionButton}>
                 <ThemedText themeColor="textSecondary">Cancel</ThemedText>
               </Pressable>
               <Pressable
-                onPress={handleSubmit}
-                disabled={!canSubmit}
+                onPress={handleSave}
+                disabled={!canSave}
                 style={[
                   styles.actionButton,
-                  { backgroundColor: canSubmit ? theme.primary : theme.backgroundSelected, borderRadius: Spacing.two },
+                  { backgroundColor: canSave ? theme.primary : theme.backgroundSelected, borderRadius: Spacing.two },
                 ]}>
-                <ThemedText style={{ color: canSubmit ? '#fff' : theme.textSecondary }}>Create</ThemedText>
+                <ThemedText style={{ color: canSave ? '#fff' : theme.textSecondary }}>Save</ThemedText>
               </Pressable>
             </View>
           </ScrollView>
@@ -212,7 +218,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    alignItems: 'center',
     gap: Spacing.three,
     marginTop: Spacing.two,
   },

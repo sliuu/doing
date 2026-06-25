@@ -3,14 +3,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Fonts, Spacing } from '@/constants/theme';
 
+import { DurationBarChart } from '@/features/stats/duration-bar-chart';
 import { PeriodTabs } from '@/features/stats/period-tabs';
 import { StatsRow } from '@/features/stats/stats-row';
 import { useStats } from '@/features/stats/use-stats';
 
+const SELF_CARE_LIMIT = 5;
+
 export default function StatsScreen() {
-  const { loading, streak, tasks, easyWins, period, setPeriod } = useStats();
+  const { loading, streak, tasks, selfCare, period, setPeriod } = useStats();
 
   if (loading) {
     return (
@@ -24,31 +27,25 @@ export default function StatsScreen() {
     <ThemedView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ padding: Spacing.four, gap: Spacing.four }}>
-          <ThemedText type="title">Stats</ThemedText>
+          <ThemedText type="title" style={{ fontFamily: Fonts.serif }}>
+            Me
+          </ThemedText>
 
           <View style={styles.streak}>
-            <ThemedText style={styles.streakNumber}>🔥 {streak}</ThemedText>
+            <ThemedText style={styles.streakNumber}>{streak}</ThemedText>
             <ThemedText themeColor="textSecondary">day streak</ThemedText>
           </View>
 
           <PeriodTabs period={period} onChange={setPeriod} />
 
-          <View style={{ gap: Spacing.two }}>
+          <View style={{ gap: Spacing.three }}>
             <ThemedText type="subtitle">Tasks</ThemedText>
-            {tasks.length === 0 ? (
-              <ThemedText themeColor="textSecondary">Nothing completed yet.</ThemedText>
-            ) : (
-              tasks.map((stat) => <StatsRow key={stat.task.id} stat={stat} showDuration />)
-            )}
+            <DurationBarChart stats={tasks} />
           </View>
 
           <View style={{ gap: Spacing.two }}>
-            <ThemedText type="subtitle">Easy Wins</ThemedText>
-            {easyWins.length === 0 ? (
-              <ThemedText themeColor="textSecondary">Nothing completed yet.</ThemedText>
-            ) : (
-              easyWins.map((stat) => <StatsRow key={stat.task.id} stat={stat} showDuration={false} />)
-            )}
+            <ThemedText type="subtitle">Self-Care</ThemedText>
+            {selfCare.slice(0, SELF_CARE_LIMIT).map((stat) => <StatsRow key={stat.task.id} stat={stat} showDuration={false} />)}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -64,6 +61,7 @@ const styles = StyleSheet.create({
   },
   streakNumber: {
     fontSize: 28,
+    lineHeight: 34,
     fontWeight: '700',
   },
 });

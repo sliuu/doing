@@ -31,7 +31,7 @@ export async function getTaskStats(
   db: SQLiteDatabase,
   dayStartHour: number,
   period: StatsPeriod,
-  isEasyWin: boolean
+  isSelfCare: boolean
 ): Promise<TaskStat[]> {
   const today = todayKey(dayStartHour);
   const startKey = startKeyForPeriod(today, period);
@@ -39,8 +39,8 @@ export async function getTaskStats(
   const rows = await db.getAllAsync<CompletedRow>(
     `SELECT ti.task_id as task_id, ti.completed_at as completed_at, ti.current_duration_seconds as current_duration_seconds
      FROM task_instances ti JOIN tasks t ON t.id = ti.task_id
-     WHERE ti.completed = 1 AND ti.completed_at IS NOT NULL AND t.is_easy_win = ?`,
-    isEasyWin ? 1 : 0
+     WHERE ti.completed = 1 AND ti.completed_at IS NOT NULL AND t.is_self_care = ?`,
+    isSelfCare ? 1 : 0
   );
 
   const inRange = rows.filter((row) => {

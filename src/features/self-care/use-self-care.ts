@@ -4,21 +4,21 @@ import { useDb } from '@/db/provider';
 import { getSettings } from '@/db/settings';
 import {
   completeInstance,
+  deleteInstance,
   ensureInstancesForDate,
   getOrCreateInstance,
   listInstancesForDate,
   uncompleteInstance,
 } from '@/db/instances';
-import { createTask, deleteTask, getTasksByIds, NewTaskInput, updateTask } from '@/db/tasks';
+import { createTask, deleteTask, excludeDate, getTasksByIds, NewTaskInput, updateTask } from '@/db/tasks';
 import { todayKey } from '@/lib/day';
 
-import { EasyWinItem } from '@/features/easy-wins/types';
+import { SelfCareItem } from '@/features/self-care/types';
 
-export function useEasyWins() {
+export function useSelfCare() {
   const db = useDb();
   const [today, setToday] = useState<string | null>(null);
-  const [seeded, setSeeded] = useState<EasyWinItem[]>([]);
-  const [custom, setCustom] = useState<EasyWinItem[]>([]);
+  const [items, setItems] = useState<SelfCareItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -29,16 +29,15 @@ export function useEasyWins() {
     const tasks = await getTasksByIds(db, [...new Set(instances.map((i) => i.taskId))]);
     const taskById = new Map(tasks.map((t) => [t.id, t]));
 
-    const items = instances
+    const selfCareItems = instances
       .map((instance) => {
         const task = taskById.get(instance.taskId);
-        return task && task.isEasyWin ? { instance, task } : null;
+        return task && task.isSelfCare ? { instance, task } : null;
       })
-      .filter((item): item is EasyWinItem => item !== null);
+      .filter((item): item is SelfCareItem => item !== null);
 
     setToday(key);
-    setSeeded(items.filter((i) => i.task.isSeed));
-    setCustom(items.filter((i) => !i.task.isSeed));
+    setItems(selfCareItems);
     setLoading(false);
   }, [db]);
 
@@ -49,7 +48,7 @@ export function useEasyWins() {
 
   const addTask = useCallback(
     async (input: NewTaskInput) => {
-      const task = await createTask(db, { ...input, isEasyWin: true, tracksDuration: false });
+      const task = await createTask(db, { ...input, isSelfCare: true, tracksDuration: false });
       if (!task.recurring && today) {
         await getOrCreateInstance(db, task.id, today);
       }
@@ -59,7 +58,7 @@ export function useEasyWins() {
   );
 
   const toggleComplete = useCallback(
-    async (item: EasyWinItem) => {
+    async (item: SelfCareItem) => {
       if (item.instance.completed) {
         await uncompleteInstance(db, item.instance.id);
       } else {
@@ -86,5 +85,15 @@ export function useEasyWins() {
     [db, refresh]
   );
 
-  return { loading, today, seeded, custom, refresh, addTask, toggleComplete, editTask, removeTask };
+  /** Deletes just one day's occurrence of a recurring self-care item, excluding that date so it isn't regenerated. */
+  const removeTaskOccurrence = useCallback(
+    async (instanceId: string, taskId: string, occurrenceDateKey: string) => {
+      await deleteInstance(db, instanceId);
+      await excludeDate(db, taskId, occurrenceDateKey);
+      await refresh();
+    },
+    [db, refresh]
+  );
+
+  return { loading, today, items, refresh, addTask, toggleComplete, editTask, removeTask, removeTaskOccurrence };
 }

@@ -109,6 +109,7 @@ async function getPreviousTimeOfDay(
 export async function ensureInstancesForDate(db: SQLiteDatabase, dateKey: string): Promise<void> {
   const recurringTasks = await listTasks(db, { recurring: true });
   for (const task of recurringTasks) {
+    if (task.excludedDates.includes(dateKey)) continue;
     if (task.recurrenceRule && matchesRecurrence(task.recurrenceRule, dateKey)) {
       const timeOfDay = await getPreviousTimeOfDay(db, task.id, dateKey);
       await getOrCreateInstance(db, task.id, dateKey, { timeOfDay });
@@ -116,7 +117,21 @@ export async function ensureInstancesForDate(db: SQLiteDatabase, dateKey: string
   }
 }
 
+/** Removes a single occurrence's row outright — pair with `excludeDate` on recurring tasks so it isn't regenerated. */
+export async function deleteInstance(db: SQLiteDatabase, instanceId: string): Promise<void> {
+  await db.runAsync('DELETE FROM task_instances WHERE id = ?', instanceId);
+}
+
+/** Only one timer may run at a time — folds any other running instance's elapsed time first. */
 export async function startTimer(db: SQLiteDatabase, instanceId: string): Promise<void> {
+  const others = await db.getAllAsync<TaskInstanceRow>(
+    `SELECT * FROM task_instances WHERE timer_state = 'running' AND id != ?`,
+    instanceId
+  );
+  for (const row of others) {
+    await pauseTimer(db, row.id);
+  }
+
   await db.runAsync(
     `UPDATE task_instances SET timer_state = 'running', timer_started_at = ? WHERE id = ?`,
     new Date().toISOString(),

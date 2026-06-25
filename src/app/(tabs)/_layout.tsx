@@ -1,6 +1,8 @@
 import { Tabs } from 'expo-router';
 
-import { TabBarIcon } from '@/components/tab-bar-icon';
+import { GearIcon, UserIcon } from '@/components/icons';
+import { TabBarButton, TabBarIcon } from '@/components/tab-bar-icon';
+import { Fonts } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function TabsLayout() {
@@ -13,33 +15,46 @@ export default function TabsLayout() {
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textSecondary,
         tabBarStyle: { backgroundColor: theme.background, borderTopColor: theme.backgroundElement },
+        tabBarLabelStyle: { fontFamily: Fonts.sans, fontSize: 11, fontWeight: '600' },
+        tabBarButton: TabBarButton,
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'To-Do',
-          tabBarIcon: ({ focused }) => <TabBarIcon emoji="📋" focused={focused} />,
+          title: 'To-dos',
+          tabBarIcon: ({ focused }) => <TabBarIcon glyph="▤" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="tools"
+        options={{
+          title: 'Tools',
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused} render={(color) => <GearIcon size={19} color={color} />} />
+          ),
         }}
       />
       <Tabs.Screen
         name="daily"
         options={{
-          title: 'Daily',
-          tabBarIcon: ({ focused }) => <TabBarIcon emoji="☀️" focused={focused} />,
+          title: 'Today',
+          tabBarIcon: ({ focused }) => <TabBarIcon glyph="☉" size={26} focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="easy-wins"
+        name="self-care"
         options={{
-          title: 'Easy Wins',
-          tabBarIcon: ({ focused }) => <TabBarIcon emoji="🌱" focused={focused} />,
+          title: 'Self-Care',
+          tabBarIcon: ({ focused }) => <TabBarIcon glyph="✿" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="stats"
         options={{
-          title: 'Stats',
-          tabBarIcon: ({ focused }) => <TabBarIcon emoji="📊" focused={focused} />,
+          title: 'Me',
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused} render={(color) => <UserIcon size={19} color={color} />} />
+          ),
         }}
       />
     </Tabs>

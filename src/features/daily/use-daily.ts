@@ -1,25 +1,25 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useDb } from '@/db/provider';
 import { getSettings } from '@/db/settings';
 import {
   adjustDuration,
   completeInstance,
+  deleteInstance,
   ensureInstancesForDate,
   getOrCreateInstance,
   listInstancesForDate,
   pauseTimer,
   setSubtaskDone,
+  setTimeOfDay,
   startTimer,
   uncompleteInstance,
 } from '@/db/instances';
-import { createTask, getTasksByIds, NewTaskInput } from '@/db/tasks';
-import { todayKey } from '@/lib/day';
+import { createTask, deleteTask, excludeDate, getTasksByIds, NewTaskInput, updateTask } from '@/db/tasks';
+import { addDaysToKey, todayKey } from '@/lib/day';
 import type { TimeOfDay } from '@/db/types';
 
-import { DailyItem, DailySections } from '@/features/daily/types';
-
-const EMPTY_SECTIONS: DailySections = { anytime: [], morning: [], afternoon: [], evening: [] };
+import { DailyItem, DailySections, DayMode } from '@/features/daily/types';
 
 function groupByTimeOfDay(items: DailyItem[]): DailySections {
   const sections: DailySections = { anytime: [], morning: [], afternoon: [], evening: [] };
@@ -38,41 +38,71 @@ function groupByTimeOfDay(items: DailyItem[]): DailySections {
 
 export function useDaily() {
   const db = useDb();
+  const [dayStartHour, setDayStartHour] = useState(4);
   const [dateKey, setDateKey] = useState<string | null>(null);
-  const [sections, setSections] = useState<DailySections>(EMPTY_SECTIONS);
+  const [items, setItems] = useState<DailyItem[]>([]);
   const [loading, setLoading] = useState(true);
+  // Session-only: resets to 'normal' on every app launch, never persisted.
+  const [dayMode, setDayMode] = useState<DayMode>('normal');
   // eslint-disable-next-line react-hooks/purity -- intentional one-time clock seed for live timer ticking
   const [now, setNow] = useState(Date.now());
 
-  const refresh = useCallback(async () => {
-    const { dayStartHour } = await getSettings(db);
-    const key = todayKey(dayStartHour);
-    await ensureInstancesForDate(db, key);
-    const instances = await listInstancesForDate(db, key);
-    const tasks = await getTasksByIds(db, [...new Set(instances.map((i) => i.taskId))]);
-    const taskById = new Map(tasks.map((t) => [t.id, t]));
-    const items = instances
-      .map((instance) => {
-        const task = taskById.get(instance.taskId);
-        return task ? { instance, task } : null;
-      })
-      .filter((item): item is DailyItem => item !== null);
+  const loadForDate = useCallback(
+    async (key: string) => {
+      await ensureInstancesForDate(db, key);
+      const instances = await listInstancesForDate(db, key);
+      const tasks = await getTasksByIds(db, [...new Set(instances.map((i) => i.taskId))]);
+      const taskById = new Map(tasks.map((t) => [t.id, t]));
+      const nextItems = instances
+        .map((instance) => {
+          const task = taskById.get(instance.taskId);
+          return task && !task.isSelfCare ? { instance, task } : null;
+        })
+        .filter((item): item is DailyItem => item !== null);
 
-    setDateKey(key);
-    setSections(groupByTimeOfDay(items));
-    setLoading(false);
+      setItems(nextItems);
+      setLoading(false);
+    },
+    [db]
+  );
+
+  const refresh = useCallback(async () => {
+    if (!dateKey) return;
+    await loadForDate(dateKey);
+  }, [dateKey, loadForDate]);
+
+  useEffect(() => {
+    (async () => {
+      const { dayStartHour: hour } = await getSettings(db);
+      setDayStartHour(hour);
+      setDateKey(todayKey(hour));
+    })();
   }, [db]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional initial data load on mount
-    refresh();
-  }, [refresh]);
+    if (dateKey) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load whenever the selected date changes
+      loadForDate(dateKey);
+    }
+  }, [dateKey, loadForDate]);
 
   // Ticks once a second so any running timer's live duration stays current on screen.
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const goToPreviousDay = useCallback(() => {
+    setDateKey((key) => (key ? addDaysToKey(key, -1) : key));
+  }, []);
+
+  const goToNextDay = useCallback(() => {
+    setDateKey((key) => (key ? addDaysToKey(key, 1) : key));
+  }, []);
+
+  const goToToday = useCallback(() => {
+    setDateKey(todayKey(dayStartHour));
+  }, [dayStartHour]);
 
   const addTask = useCallback(
     async (input: NewTaskInput, timeOfDay: TimeOfDay) => {
@@ -88,7 +118,7 @@ export function useDaily() {
   );
 
   const toggleComplete = useCallback(
-    async (instanceId: string, completed: boolean, opts?: { durationSeconds?: number; notes?: string | null }) => {
+    async (instanceId: string, completed: boolean, opts?: { durationSeconds?: number }) => {
       if (completed) {
         await uncompleteInstance(db, instanceId);
       } else {
@@ -127,16 +157,71 @@ export function useDaily() {
     [db, refresh]
   );
 
+  const editTask = useCallback(
+    async (taskId: string, patch: Parameters<typeof updateTask>[2]) => {
+      await updateTask(db, taskId, patch);
+      await refresh();
+    },
+    [db, refresh]
+  );
+
+  const moveToTimeOfDay = useCallback(
+    async (instanceId: string, timeOfDay: TimeOfDay) => {
+      await setTimeOfDay(db, instanceId, timeOfDay);
+      await refresh();
+    },
+    [db, refresh]
+  );
+
+  const removeTask = useCallback(
+    async (taskId: string) => {
+      await deleteTask(db, taskId);
+      await refresh();
+    },
+    [db, refresh]
+  );
+
+  /** Deletes just one day's occurrence of a recurring task, excluding that date so it isn't regenerated. */
+  const removeTaskOccurrence = useCallback(
+    async (instanceId: string, taskId: string, occurrenceDateKey: string) => {
+      await deleteInstance(db, instanceId);
+      await excludeDate(db, taskId, occurrenceDateKey);
+      await refresh();
+    },
+    [db, refresh]
+  );
+
+  const isToday = dateKey === todayKey(dayStartHour);
+
+  const sections = useMemo(() => {
+    const visible = items.filter((item) => {
+      if (dayMode === 'no-work' && item.task.hideOnNoWorkDays) return false;
+      if (dayMode === 'low-energy' && item.task.hideOnLowEnergyDays) return false;
+      return true;
+    });
+    return groupByTimeOfDay(visible);
+  }, [items, dayMode]);
+
   return {
     loading,
     sections,
     now,
     dateKey,
+    isToday,
+    dayMode,
+    setDayMode,
+    goToPreviousDay,
+    goToNextDay,
+    goToToday,
     refresh,
     addTask,
     toggleComplete,
     toggleRunning,
     bumpDuration,
     toggleSubtask,
+    editTask,
+    moveToTimeOfDay,
+    removeTask,
+    removeTaskOccurrence,
   };
 }

@@ -12,7 +12,6 @@ export function StatsRow({ stat, showDuration }: { stat: TaskStat; showDuration:
 
   return (
     <View style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
-      <ThemedText style={styles.emoji}>{stat.task.emoji ?? '✅'}</ThemedText>
       <ThemedText style={{ flex: 1 }}>{stat.task.title}</ThemedText>
       <ThemedText themeColor="textSecondary" type="small">
         {stat.completions}x{showDuration && stat.totalDurationSeconds > 0 ? ` · ${formatDurationShort(stat.totalDurationSeconds)}` : ''}
@@ -28,8 +27,5 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     padding: Spacing.three,
     borderRadius: Spacing.two,
-  },
-  emoji: {
-    fontSize: 20,
   },
 });

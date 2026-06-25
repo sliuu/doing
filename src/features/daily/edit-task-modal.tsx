@@ -6,7 +6,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { NewTaskInput } from '@/db/tasks';
-import type { TimeOfDay } from '@/db/types';
+import type { Task, TimeOfDay } from '@/db/types';
 import { createId } from '@/lib/id';
 
 import { CategoryPicker } from '@/features/shared/category-picker';
@@ -23,29 +23,41 @@ const FREQ_OPTIONS: { key: RecurrenceFreq; label: string }[] = [
   { key: 'monthly', label: 'Monthly' },
 ];
 
-export function NewTaskModal({
-  defaultTimeOfDay,
+export function EditTaskModal({
+  task,
+  timeOfDay,
   onCancel,
-  onSubmit,
+  onSave,
+  onDelete,
 }: {
-  defaultTimeOfDay: TimeOfDay;
+  task: Task;
+  timeOfDay: TimeOfDay;
   onCancel: () => void;
-  onSubmit: (input: NewTaskInput, timeOfDay: TimeOfDay) => void;
+  onSave: (patch: Partial<NewTaskInput>, timeOfDay: TimeOfDay) => void;
+  onDelete: () => void;
 }) {
   const theme = useTheme();
   const categories = useCategories();
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('uncategorized');
-  const [freq, setFreq] = useState<RecurrenceFreq>('once');
-  const [weekDays, setWeekDays] = useState<number[]>([]);
-  const [monthDay, setMonthDay] = useState('1');
-  const [tracksDuration, setTracksDuration] = useState(false);
-  const [expectedDuration, setExpectedDuration] = useState('');
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(defaultTimeOfDay);
-  const [subtasks, setSubtasks] = useState<{ id: string; title: string }[]>([]);
+  const [title, setTitle] = useState(task.title);
+  const [category, setCategory] = useState(task.category);
+  const [freq, setFreq] = useState<RecurrenceFreq>(
+    !task.recurring ? 'once' : task.recurrenceRule?.freq === 'daily' ? 'daily' : task.recurrenceRule?.freq === 'monthly' ? 'monthly' : 'weekly'
+  );
+  const [weekDays, setWeekDays] = useState<number[]>(
+    task.recurrenceRule?.freq === 'weekly' ? task.recurrenceRule.daysOfWeek : []
+  );
+  const [monthDay, setMonthDay] = useState(
+    task.recurrenceRule?.freq === 'monthly' ? String(task.recurrenceRule.dayOfMonth) : '1'
+  );
+  const [tracksDuration, setTracksDuration] = useState(task.tracksDuration);
+  const [expectedDuration, setExpectedDuration] = useState(
+    task.expectedDuration != null ? String(task.expectedDuration) : ''
+  );
+  const [subtasks, setSubtasks] = useState(task.subtasks);
   const [subtaskDraft, setSubtaskDraft] = useState('');
-  const [hideOnNoWorkDays, setHideOnNoWorkDays] = useState(false);
-  const [hideOnLowEnergyDays, setHideOnLowEnergyDays] = useState(false);
+  const [hideOnNoWorkDays, setHideOnNoWorkDays] = useState(task.hideOnNoWorkDays);
+  const [hideOnLowEnergyDays, setHideOnLowEnergyDays] = useState(task.hideOnLowEnergyDays);
+  const [timeOfDayState, setTimeOfDayState] = useState<TimeOfDay>(timeOfDay);
 
   const toggleWeekDay = (day: number) => {
     setWeekDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
@@ -61,10 +73,10 @@ export function NewTaskModal({
     setSubtasks((prev) => prev.filter((s) => s.id !== id));
   };
 
-  const canSubmit = title.trim() !== '' && (freq !== 'weekly' || weekDays.length > 0);
+  const canSave = title.trim() !== '' && (freq !== 'weekly' || weekDays.length > 0);
 
-  const handleSubmit = () => {
-    if (!canSubmit) return;
+  const handleSave = () => {
+    if (!canSave) return;
     const recurrenceRule =
       freq === 'daily'
         ? { freq: 'daily' as const }
@@ -74,7 +86,7 @@ export function NewTaskModal({
             ? { freq: 'monthly' as const, dayOfMonth: Number(monthDay) || 1 }
             : null;
 
-    onSubmit(
+    onSave(
       {
         title: title.trim(),
         category,
@@ -86,7 +98,7 @@ export function NewTaskModal({
         hideOnNoWorkDays,
         hideOnLowEnergyDays,
       },
-      timeOfDay
+      timeOfDayState
     );
   };
 
@@ -96,7 +108,7 @@ export function NewTaskModal({
         <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardWrapper}>
         <ThemedView style={[styles.card, { backgroundColor: theme.background }]} type="background">
           <ScrollView contentContainerStyle={{ gap: Spacing.three }}>
-            <ThemedText type="subtitle">New task</ThemedText>
+            <ThemedText type="subtitle">Edit task</ThemedText>
 
             <View style={styles.field}>
               <ThemedText themeColor="textSecondary">Title</ThemedText>
@@ -171,13 +183,13 @@ export function NewTaskModal({
                 {TIME_OF_DAY_SECTIONS.map((opt) => (
                   <Pressable
                     key={opt.key}
-                    onPress={() => setTimeOfDay(opt.key)}
+                    onPress={() => setTimeOfDayState(opt.key)}
                     style={[
                       styles.chip,
                       { borderColor: theme.backgroundSelected },
-                      timeOfDay === opt.key && { backgroundColor: theme.primary, borderColor: theme.primary },
+                      timeOfDayState === opt.key && { backgroundColor: theme.primary, borderColor: theme.primary },
                     ]}>
-                    <ThemedText style={timeOfDay === opt.key ? { color: '#fff' } : undefined} type="small">
+                    <ThemedText style={timeOfDayState === opt.key ? { color: '#fff' } : undefined} type="small">
                       {opt.label}
                     </ThemedText>
                   </Pressable>
@@ -236,17 +248,21 @@ export function NewTaskModal({
             </View>
 
             <View style={styles.actions}>
+              <Pressable onPress={onDelete} style={styles.actionButton}>
+                <ThemedText style={{ color: theme.danger }}>Delete</ThemedText>
+              </Pressable>
+              <View style={{ flex: 1 }} />
               <Pressable onPress={onCancel} style={styles.actionButton}>
                 <ThemedText themeColor="textSecondary">Cancel</ThemedText>
               </Pressable>
               <Pressable
-                onPress={handleSubmit}
-                disabled={!canSubmit}
+                onPress={handleSave}
+                disabled={!canSave}
                 style={[
                   styles.actionButton,
-                  { backgroundColor: canSubmit ? theme.primary : theme.backgroundSelected, borderRadius: Spacing.two },
+                  { backgroundColor: canSave ? theme.primary : theme.backgroundSelected, borderRadius: Spacing.two },
                 ]}>
-                <ThemedText style={{ color: canSubmit ? '#fff' : theme.textSecondary }}>Create</ThemedText>
+                <ThemedText style={{ color: canSave ? '#fff' : theme.textSecondary }}>Save</ThemedText>
               </Pressable>
             </View>
           </ScrollView>
@@ -303,7 +319,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    alignItems: 'center',
     gap: Spacing.three,
     marginTop: Spacing.two,
   },

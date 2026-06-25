@@ -7,6 +7,8 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { NewTaskInput } from '@/db/tasks';
 
+import { SELF_CARE_SECTIONS, SelfCareSection } from '@/features/self-care/types';
+
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 type RecurrenceFreq = 'once' | 'daily' | 'weekly' | 'monthly';
 const FREQ_OPTIONS: { key: RecurrenceFreq; label: string }[] = [
@@ -16,16 +18,18 @@ const FREQ_OPTIONS: { key: RecurrenceFreq; label: string }[] = [
   { key: 'monthly', label: 'Monthly' },
 ];
 
-export function NewEasyWinModal({
+export function NewSelfCareModal({
+  defaultSection = 'fun',
   onCancel,
   onSubmit,
 }: {
+  defaultSection?: SelfCareSection;
   onCancel: () => void;
   onSubmit: (input: NewTaskInput) => void;
 }) {
   const theme = useTheme();
   const [title, setTitle] = useState('');
-  const [emoji, setEmoji] = useState('');
+  const [section, setSection] = useState<SelfCareSection>(defaultSection);
   const [freq, setFreq] = useState<RecurrenceFreq>('once');
   const [weekDays, setWeekDays] = useState<number[]>([]);
   const [monthDay, setMonthDay] = useState('1');
@@ -49,8 +53,8 @@ export function NewEasyWinModal({
 
     onSubmit({
       title: title.trim(),
-      emoji: emoji.trim() === '' ? null : emoji.trim(),
       category: 'self-care',
+      selfCareSection: section,
       recurring: freq !== 'once',
       recurrenceRule,
     });
@@ -58,31 +62,40 @@ export function NewEasyWinModal({
 
   return (
     <Modal transparent animationType="slide" onRequestClose={onCancel}>
-      <View style={styles.backdrop}>
+      <Pressable style={styles.backdrop} onPress={onCancel}>
+        <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardWrapper}>
         <ThemedView style={[styles.card, { backgroundColor: theme.background }]} type="background">
           <ScrollView contentContainerStyle={{ gap: Spacing.three }}>
-            <ThemedText type="subtitle">New easy win</ThemedText>
+            <ThemedText type="subtitle">New self-care</ThemedText>
 
-            <View style={styles.row}>
-              <View style={[styles.field, { flex: 1 }]}>
-                <ThemedText themeColor="textSecondary">Emoji</ThemedText>
-                <TextInput
-                  value={emoji}
-                  onChangeText={setEmoji}
-                  placeholder="🌱"
-                  placeholderTextColor={theme.textSecondary}
-                  style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
-                />
-              </View>
-              <View style={[styles.field, { flex: 3 }]}>
-                <ThemedText themeColor="textSecondary">Title</ThemedText>
-                <TextInput
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder="A small kind thing to do"
-                  placeholderTextColor={theme.textSecondary}
-                  style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
-                />
+            <View style={styles.field}>
+              <ThemedText themeColor="textSecondary">Title</ThemedText>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                placeholder="A small kind thing to do"
+                placeholderTextColor={theme.textSecondary}
+                style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
+              />
+            </View>
+
+            <View style={styles.field}>
+              <ThemedText themeColor="textSecondary">Section</ThemedText>
+              <View style={styles.chipRow}>
+                {SELF_CARE_SECTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.key}
+                    onPress={() => setSection(opt.key)}
+                    style={[
+                      styles.chip,
+                      { borderColor: theme.backgroundSelected },
+                      section === opt.key && { backgroundColor: theme.primary, borderColor: theme.primary },
+                    ]}>
+                    <ThemedText style={section === opt.key ? { color: '#fff' } : undefined} type="small">
+                      {opt.label}
+                    </ThemedText>
+                  </Pressable>
+                ))}
               </View>
             </View>
 
@@ -153,7 +166,8 @@ export function NewEasyWinModal({
             </View>
           </ScrollView>
         </ThemedView>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
@@ -163,6 +177,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
+  },
+  cardWrapper: {
+    width: '100%',
   },
   card: {
     borderTopLeftRadius: Spacing.four,

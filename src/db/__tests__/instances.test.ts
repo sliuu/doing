@@ -3,6 +3,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import {
   adjustDuration,
   completeInstance,
+  deleteInstance,
   ensureInstancesForDate,
   getInstance,
   getLiveDurationSeconds,
@@ -17,7 +18,7 @@ import {
   startTimer,
   uncompleteInstance,
 } from '@/db/instances';
-import { createTask } from '@/db/tasks';
+import { createTask, excludeDate } from '@/db/tasks';
 import { createTestDb } from '@/test-utils/sqlite';
 
 describe('getOrCreateInstance', () => {
@@ -104,6 +105,30 @@ describe('ensureInstancesForDate', () => {
     const task = await createTask(db, { title: 'One-off', recurring: false });
     await ensureInstancesForDate(db, '2026-06-19');
     expect(await listInstancesForTask(db, task.id)).toEqual([]);
+  });
+
+  it('skips generating an instance for a date excluded on the task, but still generates other dates', async () => {
+    const task = await createTask(db, { title: 'Stretch', recurring: true, recurrenceRule: { freq: 'daily' } });
+    await excludeDate(db, task.id, '2026-06-19');
+
+    await ensureInstancesForDate(db, '2026-06-19');
+    await ensureInstancesForDate(db, '2026-06-20');
+
+    const instances = await listInstancesForTask(db, task.id);
+    expect(instances.map((i) => i.date)).toEqual(['2026-06-20']);
+  });
+
+  it("deleting just one day's instance doesn't stop it reappearing unless that date is excluded", async () => {
+    const task = await createTask(db, { title: 'Stretch', recurring: true, recurrenceRule: { freq: 'daily' } });
+    await ensureInstancesForDate(db, '2026-06-19');
+    const [instance] = await listInstancesForTask(db, task.id);
+
+    await deleteInstance(db, instance.id);
+    expect(await listInstancesForTask(db, task.id)).toEqual([]);
+
+    // Without excluding the date, the next ensure call regenerates it.
+    await ensureInstancesForDate(db, '2026-06-19');
+    expect((await listInstancesForTask(db, task.id)).map((i) => i.date)).toEqual(['2026-06-19']);
   });
 
   it("carries a recurring task's time-of-day section forward day to day", async () => {
@@ -197,6 +222,23 @@ describe('timer + duration tracking', () => {
     const live = await getInstance(db, instance.id);
     expect(getLiveDurationSeconds(live!)).toBe(30);
     expect(live?.currentDurationSeconds).toBe(0); // unchanged until paused
+  });
+
+  it('starting a timer pauses any other instance that was running', async () => {
+    const taskA = await createTask(db, { title: 'Work A', tracksDuration: true });
+    const taskB = await createTask(db, { title: 'Work B', tracksDuration: true });
+    const instanceA = await getOrCreateInstance(db, taskA.id, '2026-06-19');
+    const instanceB = await getOrCreateInstance(db, taskB.id, '2026-06-19');
+
+    await startTimer(db, instanceA.id);
+    jest.advanceTimersByTime(40 * 1000);
+    await startTimer(db, instanceB.id);
+
+    const a = await getInstance(db, instanceA.id);
+    const b = await getInstance(db, instanceB.id);
+    expect(a?.timerState).toBe('paused');
+    expect(a?.currentDurationSeconds).toBe(40);
+    expect(b?.timerState).toBe('running');
   });
 
   it('adjustDuration bumps and clamps at zero', async () => {
