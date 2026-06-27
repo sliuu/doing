@@ -23,12 +23,17 @@ export function DbBootstrap({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      await ensureSelfCareSeed(db);
-      const { dayStartHour } = await getSettings(db);
-      const key = todayKey(dayStartHour);
-      await recordAppOpen(db, key);
-      await ensureInstancesForDate(db, key);
-      setReady(true);
+      try {
+        await ensureSelfCareSeed(db);
+        const { dayStartHour } = await getSettings(db);
+        const key = todayKey(dayStartHour);
+        await recordAppOpen(db, key);
+        await ensureInstancesForDate(db, key);
+      } catch (e) {
+        console.error('[DbBootstrap] initialization error:', e);
+      } finally {
+        setReady(true);
+      }
     })();
   }, [db]);
 

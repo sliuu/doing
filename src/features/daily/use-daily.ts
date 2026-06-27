@@ -50,19 +50,24 @@ export function useDaily() {
 
   const loadForDate = useCallback(
     async (key: string) => {
-      await ensureInstancesForDate(db, key);
-      const instances = await listInstancesForDate(db, key);
-      const tasks = await getTasksByIds(db, [...new Set(instances.map((i) => i.taskId))]);
-      const taskById = new Map(tasks.map((t) => [t.id, t]));
-      const nextItems = instances
-        .map((instance) => {
-          const task = taskById.get(instance.taskId);
-          return task && !task.isSelfCare ? { instance, task } : null;
-        })
-        .filter((item): item is DailyItem => item !== null);
+      try {
+        await ensureInstancesForDate(db, key);
+        const instances = await listInstancesForDate(db, key);
+        const tasks = await getTasksByIds(db, [...new Set(instances.map((i) => i.taskId))]);
+        const taskById = new Map(tasks.map((t) => [t.id, t]));
+        const nextItems = instances
+          .map((instance) => {
+            const task = taskById.get(instance.taskId);
+            return task && !task.isSelfCare ? { instance, task } : null;
+          })
+          .filter((item): item is DailyItem => item !== null);
 
-      setItems(nextItems);
-      setLoading(false);
+        setItems(nextItems);
+      } catch (e) {
+        console.error('[useDaily] loadForDate error:', e);
+      } finally {
+        setLoading(false);
+      }
     },
     [db]
   );

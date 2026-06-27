@@ -24,23 +24,28 @@ export function useSelfCare() {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const { dayStartHour } = await getSettings(db);
-    const key = todayKey(dayStartHour);
-    await ensureInstancesForDate(db, key);
-    const instances = await listInstancesForDate(db, key);
-    const tasks = await getTasksByIds(db, [...new Set(instances.map((i) => i.taskId))]);
-    const taskById = new Map(tasks.map((t) => [t.id, t]));
+    try {
+      const { dayStartHour } = await getSettings(db);
+      const key = todayKey(dayStartHour);
+      await ensureInstancesForDate(db, key);
+      const instances = await listInstancesForDate(db, key);
+      const tasks = await getTasksByIds(db, [...new Set(instances.map((i) => i.taskId))]);
+      const taskById = new Map(tasks.map((t) => [t.id, t]));
 
-    const selfCareItems = instances
-      .map((instance) => {
-        const task = taskById.get(instance.taskId);
-        return task && task.isSelfCare ? { instance, task } : null;
-      })
-      .filter((item): item is SelfCareItem => item !== null);
+      const selfCareItems = instances
+        .map((instance) => {
+          const task = taskById.get(instance.taskId);
+          return task && task.isSelfCare ? { instance, task } : null;
+        })
+        .filter((item): item is SelfCareItem => item !== null);
 
-    setToday(key);
-    setItems(selfCareItems);
-    setLoading(false);
+      setToday(key);
+      setItems(selfCareItems);
+    } catch (e) {
+      console.error('[useSelfCare] refresh error:', e);
+    } finally {
+      setLoading(false);
+    }
   }, [db]);
 
   useEffect(() => {
