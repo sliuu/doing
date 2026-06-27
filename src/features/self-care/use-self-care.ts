@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useDb } from '@/db/provider';
+import { useDbReady } from '@/db/bootstrap';
 import { getSettings } from '@/db/settings';
 import {
   completeInstance,
@@ -17,6 +18,7 @@ import { SelfCareItem } from '@/features/self-care/types';
 
 export function useSelfCare() {
   const db = useDb();
+  const dbReady = useDbReady();
   const [today, setToday] = useState<string | null>(null);
   const [items, setItems] = useState<SelfCareItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,9 +44,11 @@ export function useSelfCare() {
   }, [db]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional initial data load on mount
-    refresh();
-  }, [refresh]);
+    if (dbReady) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional initial data load on mount
+      refresh();
+    }
+  }, [dbReady, refresh]);
 
   const addTask = useCallback(
     async (input: NewTaskInput) => {

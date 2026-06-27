@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useDb } from '@/db/provider';
+import { useDbReady } from '@/db/bootstrap';
 import { getSettings } from '@/db/settings';
 import {
   adjustDuration,
@@ -37,6 +38,7 @@ function groupByTimeOfDay(items: DailyItem[]): DailySections {
 
 export function useDaily() {
   const db = useDb();
+  const dbReady = useDbReady();
   const [dayStartHour, setDayStartHour] = useState(4);
   const [dateKey, setDateKey] = useState<string | null>(null);
   const [items, setItems] = useState<DailyItem[]>([]);
@@ -79,11 +81,11 @@ export function useDaily() {
   }, [db]);
 
   useEffect(() => {
-    if (dateKey) {
+    if (dateKey && dbReady) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional data load whenever the selected date changes
       loadForDate(dateKey);
     }
-  }, [dateKey, loadForDate]);
+  }, [dateKey, dbReady, loadForDate]);
 
   // Ticks once a second so any running timer's live duration stays current on screen.
   useEffect(() => {
