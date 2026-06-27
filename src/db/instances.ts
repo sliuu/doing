@@ -46,13 +46,14 @@ export async function getOrCreateInstance(
 
   const id = createId();
   await db.runAsync(
-    `INSERT INTO task_instances (id, task_id, date, time_of_day, scheduled_date)
-     VALUES (?, ?, ?, ?, ?)`,
+    `INSERT INTO task_instances (id, task_id, date, time_of_day, scheduled_date, subtask_states)
+     VALUES (?, ?, ?, ?, ?, ?)`,
     id,
     taskId,
     dateKey,
     defaults.timeOfDay ?? 'anytime',
-    defaults.scheduledDate ?? null
+    defaults.scheduledDate ?? null,
+    '[]'
   );
   return (await getInstance(db, id))!;
 }
