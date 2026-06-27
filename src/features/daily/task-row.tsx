@@ -65,11 +65,6 @@ export function TaskRow({
           themeColor={instance.completed ? 'textSecondary' : 'text'}>
           {task.title}
         </ThemedText>
-        {task.subtasks.length > 0 && (
-          <ThemedText type="small" themeColor="textSecondary">
-            {instance.subtaskStates.filter((s) => s.done).length}/{task.subtasks.length} subtasks
-          </ThemedText>
-        )}
       </View>
 
       {task.tracksDuration && (

@@ -3,7 +3,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { createId } from '@/lib/id';
 import type { RecurrenceRule } from '@/lib/recurrence';
 
-import { Task, TaskRow, TaskSize, taskFromRow, Subtask } from '@/db/types';
+import { Task, TaskRow, TaskSize, taskFromRow } from '@/db/types';
 
 export interface NewTaskInput {
   title: string;
@@ -16,7 +16,6 @@ export interface NewTaskInput {
   recurrenceRule?: RecurrenceRule | null;
   tracksDuration?: boolean;
   expectedDuration?: number | null;
-  subtasks?: Subtask[];
   orderIndex?: number;
   hideOnNoWorkDays?: boolean;
   hideOnLowEnergyDays?: boolean;
@@ -40,7 +39,7 @@ export async function createTask(db: SQLiteDatabase, input: NewTaskInput): Promi
     input.recurrenceRule ? JSON.stringify(input.recurrenceRule) : null,
     input.tracksDuration ? 1 : 0,
     input.expectedDuration ?? null,
-    JSON.stringify(input.subtasks ?? []),
+    '[]',
     input.orderIndex ?? 0,
     input.hideOnNoWorkDays ? 1 : 0,
     input.hideOnLowEnergyDays ? 1 : 0,
@@ -73,7 +72,7 @@ export async function updateTask(db: SQLiteDatabase, id: string, patch: Partial<
       : current.recurrenceRule ? JSON.stringify(current.recurrenceRule) : null,
     (patch.tracksDuration ?? current.tracksDuration) ? 1 : 0,
     patch.expectedDuration !== undefined ? patch.expectedDuration : current.expectedDuration,
-    JSON.stringify(patch.subtasks ?? current.subtasks),
+    JSON.stringify(current.subtasks),
     (patch.hideOnNoWorkDays ?? current.hideOnNoWorkDays) ? 1 : 0,
     (patch.hideOnLowEnergyDays ?? current.hideOnLowEnergyDays) ? 1 : 0,
     patch.selfCareSection !== undefined ? patch.selfCareSection : current.selfCareSection,

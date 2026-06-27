@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -7,8 +8,6 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { NewTaskInput } from '@/db/tasks';
 import type { Task, TimeOfDay } from '@/db/types';
-import { createId } from '@/lib/id';
-
 import { CategoryPicker } from '@/features/shared/category-picker';
 import { DurationPicker } from '@/features/shared/duration-picker';
 import { useCategories } from '@/features/shared/use-categories';
@@ -37,6 +36,8 @@ export function EditTaskModal({
   onDelete: () => void;
 }) {
   const theme = useTheme();
+  const { height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const categories = useCategories();
   const [title, setTitle] = useState(task.title);
   const [category, setCategory] = useState(task.category);
@@ -53,24 +54,12 @@ export function EditTaskModal({
   const [expectedDuration, setExpectedDuration] = useState(
     task.expectedDuration != null ? String(task.expectedDuration) : ''
   );
-  const [subtasks, setSubtasks] = useState(task.subtasks);
-  const [subtaskDraft, setSubtaskDraft] = useState('');
   const [hideOnNoWorkDays, setHideOnNoWorkDays] = useState(task.hideOnNoWorkDays);
   const [hideOnLowEnergyDays, setHideOnLowEnergyDays] = useState(task.hideOnLowEnergyDays);
   const [timeOfDayState, setTimeOfDayState] = useState<TimeOfDay>(timeOfDay);
 
   const toggleWeekDay = (day: number) => {
     setWeekDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
-  };
-
-  const addSubtask = () => {
-    if (subtaskDraft.trim() === '') return;
-    setSubtasks((prev) => [...prev, { id: createId(), title: subtaskDraft.trim() }]);
-    setSubtaskDraft('');
-  };
-
-  const removeSubtask = (id: string) => {
-    setSubtasks((prev) => prev.filter((s) => s.id !== id));
   };
 
   const canSave = title.trim() !== '' && (freq !== 'weekly' || weekDays.length > 0);
@@ -94,9 +83,8 @@ export function EditTaskModal({
         recurrenceRule,
         tracksDuration,
         expectedDuration: tracksDuration && expectedDuration !== '' ? Number(expectedDuration) : null,
-        subtasks,
-        hideOnNoWorkDays,
-        hideOnLowEnergyDays,
+        hideOnNoWorkDays: freq !== 'once' ? hideOnNoWorkDays : false,
+        hideOnLowEnergyDays: freq !== 'once' ? hideOnLowEnergyDays : false,
       },
       timeOfDayState
     );
@@ -104,9 +92,10 @@ export function EditTaskModal({
 
   return (
     <Modal transparent animationType="slide" onRequestClose={onCancel}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <Pressable style={styles.backdrop} onPress={onCancel}>
         <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardWrapper}>
-        <ThemedView style={[styles.card, { backgroundColor: theme.background }]} type="background">
+        <ThemedView style={[styles.card, { backgroundColor: theme.background, maxHeight: windowHeight * 0.85, paddingBottom: insets.bottom + Spacing.four }]} type="background">
           <ScrollView contentContainerStyle={{ gap: Spacing.three }}>
             <ThemedText type="subtitle">Edit task</ThemedText>
 
@@ -212,40 +201,19 @@ export function EditTaskModal({
               </View>
             )}
 
-            <View style={[styles.row, { alignItems: 'center', justifyContent: 'space-between' }]}>
-              <ThemedText themeColor="textSecondary">Hide on no-work days</ThemedText>
-              <Switch value={hideOnNoWorkDays} onValueChange={setHideOnNoWorkDays} />
-            </View>
-
-            <View style={[styles.row, { alignItems: 'center', justifyContent: 'space-between' }]}>
-              <ThemedText themeColor="textSecondary">Hide on low-energy days</ThemedText>
-              <Switch value={hideOnLowEnergyDays} onValueChange={setHideOnLowEnergyDays} />
-            </View>
-
-            <View style={styles.field}>
-              <ThemedText themeColor="textSecondary">Subtasks</ThemedText>
-              {subtasks.map((s) => (
-                <View key={s.id} style={styles.subtaskDraftRow}>
-                  <ThemedText style={{ flex: 1 }}>{s.title}</ThemedText>
-                  <Pressable onPress={() => removeSubtask(s.id)}>
-                    <ThemedText themeColor="textSecondary">Remove</ThemedText>
-                  </Pressable>
+            {freq !== 'once' && (
+              <>
+                <View style={[styles.row, { alignItems: 'center', justifyContent: 'space-between' }]}>
+                  <ThemedText themeColor="textSecondary">Hide on no-work days</ThemedText>
+                  <Switch value={hideOnNoWorkDays} onValueChange={setHideOnNoWorkDays} />
                 </View>
-              ))}
-              <View style={styles.row}>
-                <TextInput
-                  value={subtaskDraft}
-                  onChangeText={setSubtaskDraft}
-                  placeholder="Add a subtask"
-                  placeholderTextColor={theme.textSecondary}
-                  style={[styles.input, { flex: 1, color: theme.text, borderColor: theme.backgroundSelected }]}
-                  onSubmitEditing={addSubtask}
-                />
-                <Pressable onPress={addSubtask} style={[styles.chip, { borderColor: theme.backgroundSelected }]}>
-                  <ThemedText type="small">Add</ThemedText>
-                </Pressable>
-              </View>
-            </View>
+
+                <View style={[styles.row, { alignItems: 'center', justifyContent: 'space-between' }]}>
+                  <ThemedText themeColor="textSecondary">Hide on low-energy days</ThemedText>
+                  <Switch value={hideOnLowEnergyDays} onValueChange={setHideOnLowEnergyDays} />
+                </View>
+              </>
+            )}
 
             <View style={styles.actions}>
               <Pressable onPress={onDelete} style={styles.actionButton}>
@@ -269,6 +237,7 @@ export function EditTaskModal({
         </ThemedView>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -286,7 +255,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: Spacing.four,
     borderTopRightRadius: Spacing.four,
     padding: Spacing.four,
-    maxHeight: '85%',
   },
   field: {
     gap: Spacing.one,
@@ -311,11 +279,6 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
-  },
-  subtaskDraftRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
   },
   actions: {
     flexDirection: 'row',

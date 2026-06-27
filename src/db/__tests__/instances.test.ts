@@ -13,7 +13,6 @@ import {
   listInstancesForTask,
   pauseTimer,
   setScheduledDate,
-  setSubtaskDone,
   setTimeOfDay,
   startTimer,
   uncompleteInstance,
@@ -29,14 +28,14 @@ describe('getOrCreateInstance', () => {
   });
 
   it('creates a new instance with the given defaults', async () => {
-    const task = await createTask(db, { title: 'Read', subtasks: [{ id: 's1', title: 'Pick a book' }] });
+    const task = await createTask(db, { title: 'Read' });
     const instance = await getOrCreateInstance(db, task.id, '2026-06-19', { timeOfDay: 'morning' });
 
     expect(instance.taskId).toBe(task.id);
     expect(instance.date).toBe('2026-06-19');
     expect(instance.timeOfDay).toBe('morning');
     expect(instance.completed).toBe(false);
-    expect(instance.subtaskStates).toEqual([{ id: 's1', title: 'Pick a book', done: false }]);
+    expect(instance.subtaskStates).toEqual([]);
   });
 
   it('defaults timeOfDay to anytime when none is given', async () => {
@@ -280,28 +279,3 @@ describe('timer + duration tracking', () => {
   });
 });
 
-describe('subtasks', () => {
-  let db: SQLiteDatabase;
-
-  beforeEach(async () => {
-    db = await createTestDb();
-  });
-
-  it('toggles an individual subtask done state without affecting others', async () => {
-    const task = await createTask(db, {
-      title: 'Clean',
-      subtasks: [
-        { id: 's1', title: 'Dishes' },
-        { id: 's2', title: 'Laundry' },
-      ],
-    });
-    const instance = await getOrCreateInstance(db, task.id, '2026-06-19');
-
-    await setSubtaskDone(db, instance.id, 's1', true);
-    const updated = await getInstance(db, instance.id);
-    expect(updated?.subtaskStates).toEqual([
-      { id: 's1', title: 'Dishes', done: true },
-      { id: 's2', title: 'Laundry', done: false },
-    ]);
-  });
-});

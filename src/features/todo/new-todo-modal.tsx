@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -7,8 +8,6 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { NewTaskInput } from '@/db/tasks';
 import type { TaskSize } from '@/db/types';
-import { createId } from '@/lib/id';
-
 import { CategoryPicker } from '@/features/shared/category-picker';
 import { useCategories } from '@/features/shared/use-categories';
 import { SIZE_SECTIONS } from '@/features/todo/types';
@@ -23,25 +22,14 @@ export function NewTodoModal({
   onSubmit: (input: NewTaskInput) => void;
 }) {
   const theme = useTheme();
+  const { height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const categories = useCategories();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('uncategorized');
   const [size, setSize] = useState<TaskSize>(defaultSize);
   const [tracksDuration, setTracksDuration] = useState(false);
   const [expectedDuration, setExpectedDuration] = useState('');
-  const [subtasks, setSubtasks] = useState<{ id: string; title: string }[]>([]);
-  const [subtaskDraft, setSubtaskDraft] = useState('');
-
-  const addSubtask = () => {
-    if (subtaskDraft.trim() === '') return;
-    setSubtasks((prev) => [...prev, { id: createId(), title: subtaskDraft.trim() }]);
-    setSubtaskDraft('');
-  };
-
-  const removeSubtask = (id: string) => {
-    setSubtasks((prev) => prev.filter((s) => s.id !== id));
-  };
-
   const canSubmit = title.trim() !== '';
 
   const handleSubmit = () => {
@@ -54,15 +42,15 @@ export function NewTodoModal({
       recurrenceRule: null,
       tracksDuration,
       expectedDuration: tracksDuration && expectedDuration !== '' ? Number(expectedDuration) : null,
-      subtasks,
     });
   };
 
   return (
     <Modal transparent animationType="slide" onRequestClose={onCancel}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <Pressable style={styles.backdrop} onPress={onCancel}>
         <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardWrapper}>
-        <ThemedView style={[styles.card, { backgroundColor: theme.background }]} type="background">
+        <ThemedView style={[styles.card, { backgroundColor: theme.background, maxHeight: windowHeight * 0.85, paddingBottom: insets.bottom + Spacing.four }]} type="background">
           <ScrollView contentContainerStyle={{ gap: Spacing.three }}>
             <ThemedText type="subtitle">New to-do</ThemedText>
 
@@ -119,31 +107,6 @@ export function NewTodoModal({
               </View>
             )}
 
-            <View style={styles.field}>
-              <ThemedText themeColor="textSecondary">Subtasks</ThemedText>
-              {subtasks.map((s) => (
-                <View key={s.id} style={styles.subtaskDraftRow}>
-                  <ThemedText style={{ flex: 1 }}>{s.title}</ThemedText>
-                  <Pressable onPress={() => removeSubtask(s.id)}>
-                    <ThemedText themeColor="textSecondary">Remove</ThemedText>
-                  </Pressable>
-                </View>
-              ))}
-              <View style={styles.row}>
-                <TextInput
-                  value={subtaskDraft}
-                  onChangeText={setSubtaskDraft}
-                  placeholder="Add a subtask"
-                  placeholderTextColor={theme.textSecondary}
-                  style={[styles.input, { flex: 1, color: theme.text, borderColor: theme.backgroundSelected }]}
-                  onSubmitEditing={addSubtask}
-                />
-                <Pressable onPress={addSubtask} style={[styles.chip, { borderColor: theme.backgroundSelected }]}>
-                  <ThemedText type="small">Add</ThemedText>
-                </Pressable>
-              </View>
-            </View>
-
             <View style={styles.actions}>
               <Pressable onPress={onCancel} style={styles.actionButton}>
                 <ThemedText themeColor="textSecondary">Cancel</ThemedText>
@@ -162,6 +125,7 @@ export function NewTodoModal({
         </ThemedView>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -179,7 +143,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: Spacing.four,
     borderTopRightRadius: Spacing.four,
     padding: Spacing.four,
-    maxHeight: '85%',
   },
   field: {
     gap: Spacing.one,
@@ -204,11 +167,6 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
-  },
-  subtaskDraftRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
   },
   actions: {
     flexDirection: 'row',

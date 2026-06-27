@@ -24,7 +24,6 @@ export function TimerModal({
   dayMode,
   onToggleRunning,
   onAdjust,
-  onToggleSubtask,
   onChangeExpectedDuration,
   onComplete,
   onClose,
@@ -34,7 +33,6 @@ export function TimerModal({
   dayMode: DayMode;
   onToggleRunning: () => void;
   onAdjust: (deltaSeconds: number) => void;
-  onToggleSubtask: (subtaskId: string, done: boolean) => void;
   onChangeExpectedDuration: (totalMinutes: number) => void;
   onComplete: () => void;
   onClose: () => void;
@@ -144,24 +142,6 @@ export function TimerModal({
             ))}
           </View>
 
-          {task.subtasks.length > 0 && (
-            <View style={styles.subtasks}>
-              {instance.subtaskStates.map((s) => (
-                <Pressable
-                  key={s.id}
-                  onPress={() => onToggleSubtask(s.id, !s.done)}
-                  style={styles.subtaskRow}>
-                  <View style={[styles.subtaskCheckbox, { borderColor: theme.primary }, s.done && { backgroundColor: theme.primary }]}>
-                    {s.done && <ThemedText style={{ color: '#fff', fontSize: 12 }}>✓</ThemedText>}
-                  </View>
-                  <ThemedText themeColor={s.done ? 'textSecondary' : 'text'} style={s.done && { textDecorationLine: 'line-through' }}>
-                    {s.title}
-                  </ThemedText>
-                </Pressable>
-              ))}
-            </View>
-          )}
-
           <View style={styles.actions}>
             <Pressable onPress={onClose} style={styles.actionButton}>
               <ThemedText themeColor="textSecondary">Minimize</ThemedText>
@@ -239,22 +219,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     borderRadius: Spacing.two,
-  },
-  subtasks: {
-    gap: Spacing.two,
-  },
-  subtaskRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  subtaskCheckbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   actions: {
     flexDirection: 'row',

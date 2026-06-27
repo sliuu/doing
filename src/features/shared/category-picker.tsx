@@ -28,7 +28,7 @@ export function CategoryPicker({
   };
 
   const addCategory = () => {
-    const trimmed = draft.trim();
+    const trimmed = draft.trim().toLowerCase();
     if (trimmed === '') return;
     selectCategory(trimmed);
   };

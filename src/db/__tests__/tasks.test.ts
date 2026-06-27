@@ -18,14 +18,13 @@ describe('tasks', () => {
       recurring: true,
       recurrenceRule: { freq: 'daily' },
       tracksDuration: false,
-      subtasks: [{ id: 's1', title: 'Fill bottle' }],
     });
 
     const fetched = await getTask(db, task.id);
     expect(fetched).toEqual(task);
     expect(fetched?.title).toBe('Drink water');
     expect(fetched?.recurrenceRule).toEqual({ freq: 'daily' });
-    expect(fetched?.subtasks).toEqual([{ id: 's1', title: 'Fill bottle' }]);
+    expect(fetched?.subtasks).toEqual([]);
   });
 
   it('applies sensible defaults for omitted fields', async () => {
@@ -72,7 +71,7 @@ describe('tasks', () => {
     expect(await getTask(db, task.id)).toBeNull();
   });
 
-  it('updates category, size, duration tracking, and subtasks on a task', async () => {
+  it('updates category, size, and duration tracking on a task', async () => {
     const task = await createTask(db, { title: 'Old', category: 'health', size: 'small', tracksDuration: false });
 
     await updateTask(db, task.id, {
@@ -80,7 +79,6 @@ describe('tasks', () => {
       size: 'large',
       tracksDuration: true,
       expectedDuration: 30,
-      subtasks: [{ id: 's1', title: 'Step one' }],
     });
 
     const updated = await getTask(db, task.id);
@@ -88,7 +86,7 @@ describe('tasks', () => {
     expect(updated?.size).toBe('large');
     expect(updated?.tracksDuration).toBe(true);
     expect(updated?.expectedDuration).toBe(30);
-    expect(updated?.subtasks).toEqual([{ id: 's1', title: 'Step one' }]);
+    expect(updated?.subtasks).toEqual([]);
     // Fields omitted from the patch are left untouched.
     expect(updated?.title).toBe('Old');
   });

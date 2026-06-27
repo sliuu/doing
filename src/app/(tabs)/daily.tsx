@@ -40,7 +40,6 @@ export default function DailyScreen() {
     toggleComplete,
     toggleRunning,
     bumpDuration,
-    toggleSubtask,
     editTask,
     moveToTimeOfDay,
     removeTask,
@@ -210,7 +209,6 @@ export default function DailyScreen() {
           dayMode={dayMode}
           onToggleRunning={() => toggleRunning(activeTimerItem.instance.id, activeTimerItem.instance.timerState === 'running')}
           onAdjust={(delta) => bumpDuration(activeTimerItem.instance.id, delta)}
-          onToggleSubtask={(subtaskId, done) => toggleSubtask(activeTimerItem.instance.id, subtaskId, done)}
           onChangeExpectedDuration={(minutes) =>
             editTask(activeTimerItem.task.id, { expectedDuration: minutes > 0 ? minutes : null })
           }

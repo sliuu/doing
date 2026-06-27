@@ -10,7 +10,6 @@ import {
   getOrCreateInstance,
   listInstancesForDate,
   pauseTimer,
-  setSubtaskDone,
   setTimeOfDay,
   startTimer,
   uncompleteInstance,
@@ -149,14 +148,6 @@ export function useDaily() {
     [db, refresh]
   );
 
-  const toggleSubtask = useCallback(
-    async (instanceId: string, subtaskId: string, done: boolean) => {
-      await setSubtaskDone(db, instanceId, subtaskId, done);
-      await refresh();
-    },
-    [db, refresh]
-  );
-
   const editTask = useCallback(
     async (taskId: string, patch: Parameters<typeof updateTask>[2]) => {
       await updateTask(db, taskId, patch);
@@ -218,7 +209,6 @@ export function useDaily() {
     toggleComplete,
     toggleRunning,
     bumpDuration,
-    toggleSubtask,
     editTask,
     moveToTimeOfDay,
     removeTask,

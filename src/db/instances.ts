@@ -44,24 +44,15 @@ export async function getOrCreateInstance(
   );
   if (existing) return instanceFromRow(existing);
 
-  const task = await db.getFirstAsync<{ subtasks: string }>(
-    'SELECT subtasks FROM tasks WHERE id = ?',
-    taskId
-  );
-  const subtaskStates = task
-    ? JSON.parse(task.subtasks).map((s: { id: string; title: string }) => ({ ...s, done: false }))
-    : [];
-
   const id = createId();
   await db.runAsync(
-    `INSERT INTO task_instances (id, task_id, date, time_of_day, scheduled_date, subtask_states)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO task_instances (id, task_id, date, time_of_day, scheduled_date)
+     VALUES (?, ?, ?, ?, ?)`,
     id,
     taskId,
     dateKey,
     defaults.timeOfDay ?? 'anytime',
-    defaults.scheduledDate ?? null,
-    JSON.stringify(subtaskStates)
+    defaults.scheduledDate ?? null
   );
   return (await getInstance(db, id))!;
 }
@@ -207,18 +198,3 @@ export async function setTimeOfDay(
   await db.runAsync('UPDATE task_instances SET time_of_day = ? WHERE id = ?', timeOfDay, instanceId);
 }
 
-export async function setSubtaskDone(
-  db: SQLiteDatabase,
-  instanceId: string,
-  subtaskId: string,
-  done: boolean
-): Promise<void> {
-  const instance = await getInstance(db, instanceId);
-  if (!instance) return;
-  const updated = instance.subtaskStates.map((s) => (s.id === subtaskId ? { ...s, done } : s));
-  await db.runAsync(
-    'UPDATE task_instances SET subtask_states = ? WHERE id = ?',
-    JSON.stringify(updated),
-    instanceId
-  );
-}
