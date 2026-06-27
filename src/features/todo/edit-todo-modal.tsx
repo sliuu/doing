@@ -53,7 +53,7 @@ export function EditTodoModal({
       <Pressable style={styles.backdrop} onPress={onCancel}>
         <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardWrapper}>
         <ThemedView style={[styles.card, { backgroundColor: theme.background, maxHeight: windowHeight * 0.85, paddingBottom: insets.bottom + Spacing.four }]} type="background">
-          <ScrollView contentContainerStyle={{ gap: Spacing.three }}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: Spacing.three }} keyboardShouldPersistTaps="handled">
             <ThemedText type="subtitle">Edit to-do</ThemedText>
 
             <View style={styles.field}>
