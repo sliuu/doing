@@ -45,8 +45,11 @@ export async function getOrCreateInstance(
   if (existing) return instanceFromRow(existing);
 
   const id = createId();
+  // INSERT OR IGNORE handles concurrent calls from DbBootstrap / useDaily / useSelfCare
+  // all running ensureInstancesForDate simultaneously — the second insert is silently
+  // dropped and the SELECT below returns whichever row won.
   await db.runAsync(
-    `INSERT INTO task_instances (id, task_id, date, time_of_day, scheduled_date, subtask_states)
+    `INSERT OR IGNORE INTO task_instances (id, task_id, date, time_of_day, scheduled_date, subtask_states)
      VALUES (?, ?, ?, ?, ?, ?)`,
     id,
     taskId,
@@ -55,7 +58,12 @@ export async function getOrCreateInstance(
     defaults.scheduledDate ?? null,
     '[]'
   );
-  return (await getInstance(db, id))!;
+  const row = await db.getFirstAsync<TaskInstanceRow>(
+    'SELECT * FROM task_instances WHERE task_id = ? AND date = ?',
+    taskId,
+    dateKey
+  );
+  return instanceFromRow(row!);
 }
 
 /**
