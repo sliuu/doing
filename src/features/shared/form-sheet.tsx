@@ -41,10 +41,13 @@ export function FormSheet({ onClose, children }: { onClose: () => void; children
           type="background">
           {/* The height cap must sit on the ScrollView itself: the card is auto-sized
               by its content, so a maxHeight (or flex) higher up doesn't bound the
-              ScrollView — content just gets clipped with no way to scroll to it. */}
+              ScrollView — content just gets clipped with no way to scroll to it.
+              The ScrollView spans the full card width so its scroll indicator rides
+              the card's right edge; horizontal padding lives on the content instead,
+              keeping the form fields clear of the scrollbar. */}
           <ScrollView
             style={{ maxHeight: windowHeight * 0.7 }}
-            contentContainerStyle={{ gap: Spacing.three }}
+            contentContainerStyle={{ gap: Spacing.three, paddingHorizontal: Spacing.four }}
             keyboardShouldPersistTaps="handled">
             {children}
           </ScrollView>
@@ -119,10 +122,17 @@ export function SwitchRow({
   value: boolean;
   onValueChange: (value: boolean) => void;
 }) {
+  const theme = useTheme();
   return (
     <View style={styles.switchRow}>
       <ThemedText themeColor="textSecondary">{label}</ThemedText>
-      <Switch value={value} onValueChange={onValueChange} />
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ true: theme.primary, false: theme.backgroundSelected }}
+        thumbColor="#fff"
+        ios_backgroundColor={theme.backgroundSelected}
+      />
     </View>
   );
 }
@@ -178,7 +188,7 @@ const styles = StyleSheet.create({
   card: {
     borderTopLeftRadius: Spacing.four,
     borderTopRightRadius: Spacing.four,
-    padding: Spacing.four,
+    paddingTop: Spacing.four,
   },
   input: {
     borderWidth: 1,

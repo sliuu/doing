@@ -192,7 +192,7 @@ export default function DailyScreen() {
                       setCompletingInstanceId(item.instance.id);
                     }
                   }}
-                  onStartTimer={() => setActiveTimerInstanceId(item.instance.id)}
+                  onStartTimer={() => toggleRunning(item.instance.id, item.instance.timerState === 'running')}
                   onPress={() => setActionsInstanceId(item.instance.id)}
                 />
               ))}
@@ -272,8 +272,8 @@ export default function DailyScreen() {
             setEditingTaskId(actionsItem.task.id);
           }}
           onStartTimer={() => {
+            toggleRunning(actionsItem.instance.id, actionsItem.instance.timerState === 'running');
             setActionsInstanceId(null);
-            setActiveTimerInstanceId(actionsItem.instance.id);
           }}
           onDelete={() => {
             setActionsInstanceId(null);

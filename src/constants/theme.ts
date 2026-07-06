@@ -14,7 +14,7 @@ const palette = {
   backgroundElement: '#2b1414',
   backgroundSelected: '#3d1c1c',
   textSecondary: '#b08d83',
-  primary: '#e9cda2',
+  primary: '#ddb97f',
   primarySoft: '#3a2a1c',
   scheduled: '#93a3c9',
   scheduledSoft: '#23283a',
