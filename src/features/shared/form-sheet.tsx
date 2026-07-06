@@ -30,24 +30,25 @@ export function FormSheet({ onClose, children }: { onClose: () => void; children
 
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <Pressable style={styles.backdrop} onPress={onClose}>
-          <Pressable onPress={(e) => e.stopPropagation()} style={{ width: '100%' }}>
-            <ThemedView
-              style={[styles.card, { backgroundColor: theme.background, paddingBottom: insets.bottom + Spacing.four }]}
-              type="background">
-              {/* The height cap must sit on the ScrollView itself: the card is auto-sized
-                  by its content, so a maxHeight (or flex) higher up doesn't bound the
-                  ScrollView — content just gets clipped with no way to scroll to it. */}
-              <ScrollView
-                style={{ maxHeight: windowHeight * 0.7 }}
-                contentContainerStyle={{ gap: Spacing.three }}
-                keyboardShouldPersistTaps="handled">
-                {children}
-              </ScrollView>
-            </ThemedView>
-          </Pressable>
-        </Pressable>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+        {/* The tap-to-dismiss backdrop is an absolutely-filled sibling *behind* the card,
+            not an ancestor of it. Wrapping the card in a Pressable makes that Pressable
+            compete with the ScrollView for the drag gesture, so scrolling only works
+            intermittently. As a plain sibling it never touches the card's gestures. */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <ThemedView
+          style={[styles.card, { backgroundColor: theme.background, paddingBottom: insets.bottom + Spacing.four }]}
+          type="background">
+          {/* The height cap must sit on the ScrollView itself: the card is auto-sized
+              by its content, so a maxHeight (or flex) higher up doesn't bound the
+              ScrollView — content just gets clipped with no way to scroll to it. */}
+          <ScrollView
+            style={{ maxHeight: windowHeight * 0.7 }}
+            contentContainerStyle={{ gap: Spacing.three }}
+            keyboardShouldPersistTaps="handled">
+            {children}
+          </ScrollView>
+        </ThemedView>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -169,7 +170,7 @@ export function FormActions({
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
+  container: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
