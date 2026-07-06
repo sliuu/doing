@@ -13,7 +13,6 @@ describe('tasks', () => {
   it('creates a task and reads back the same data', async () => {
     const task = await createTask(db, {
       title: 'Drink water',
-      emoji: '💧',
       category: 'health',
       recurring: true,
       recurrenceRule: { freq: 'daily' },
@@ -24,7 +23,6 @@ describe('tasks', () => {
     expect(fetched).toEqual(task);
     expect(fetched?.title).toBe('Drink water');
     expect(fetched?.recurrenceRule).toEqual({ freq: 'daily' });
-    expect(fetched?.subtasks).toEqual([]);
   });
 
   it('applies sensible defaults for omitted fields', async () => {
@@ -33,7 +31,6 @@ describe('tasks', () => {
     expect(task.isSelfCare).toBe(false);
     expect(task.recurring).toBe(false);
     expect(task.recurrenceRule).toBeNull();
-    expect(task.subtasks).toEqual([]);
   });
 
   it('lists tasks filtered by recurring and isSelfCare', async () => {
@@ -86,7 +83,6 @@ describe('tasks', () => {
     expect(updated?.size).toBe('large');
     expect(updated?.tracksDuration).toBe(true);
     expect(updated?.expectedDuration).toBe(30);
-    expect(updated?.subtasks).toEqual([]);
     // Fields omitted from the patch are left untouched.
     expect(updated?.title).toBe('Old');
   });

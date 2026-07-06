@@ -39,9 +39,7 @@ export function TimerModal({
 }) {
   const theme = useTheme();
   const { task, instance } = item;
-  // `now` forces a re-render every second so the displayed time ticks while running.
-  void now;
-  const liveSeconds = getLiveDurationSeconds(instance);
+  const liveSeconds = getLiveDurationSeconds(instance, now);
   const expectedMinutes = effectiveExpectedMinutes(task.expectedDuration, dayMode);
   const expectedSeconds = expectedMinutes ? expectedMinutes * 60 : null;
   const reachedExpected = expectedSeconds !== null && liveSeconds >= expectedSeconds;

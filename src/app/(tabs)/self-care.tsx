@@ -8,9 +8,8 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { DeleteChoiceModal } from '@/features/shared/delete-choice-modal';
-import { EditSelfCareModal } from '@/features/self-care/edit-self-care-modal';
+import { SelfCareFormModal } from '@/features/self-care/self-care-form-modal';
 import { SelfCareRow } from '@/features/self-care/self-care-row';
-import { NewSelfCareModal } from '@/features/self-care/new-self-care-modal';
 import { SELF_CARE_SECTIONS, SelfCareItem, SelfCareSection, sectionForItem } from '@/features/self-care/types';
 import { useSelfCare } from '@/features/self-care/use-self-care';
 
@@ -78,10 +77,10 @@ export default function SelfCareScreen() {
       </SafeAreaView>
 
       {editingItem && (
-        <EditSelfCareModal
+        <SelfCareFormModal
           task={editingItem.task}
           onCancel={() => setEditingTaskId(null)}
-          onSave={(patch) => {
+          onSubmit={(patch) => {
             editTask(editingItem.task.id, patch);
             setEditingTaskId(null);
           }}
@@ -93,7 +92,7 @@ export default function SelfCareScreen() {
       )}
 
       {newSection && (
-        <NewSelfCareModal
+        <SelfCareFormModal
           defaultSection={newSection}
           onCancel={() => setNewSection(null)}
           onSubmit={(input) => {

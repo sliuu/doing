@@ -45,18 +45,16 @@ export async function getOrCreateInstance(
   if (existing) return instanceFromRow(existing);
 
   const id = createId();
-  // INSERT OR IGNORE handles concurrent calls from DbBootstrap / useDaily / useSelfCare
-  // all running ensureInstancesForDate simultaneously — the second insert is silently
-  // dropped and the SELECT below returns whichever row won.
+  // INSERT OR IGNORE handles concurrent callers racing to create the same task+date row —
+  // the losing insert is silently dropped and the SELECT below returns whichever row won.
   await db.runAsync(
-    `INSERT OR IGNORE INTO task_instances (id, task_id, date, time_of_day, scheduled_date, subtask_states)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT OR IGNORE INTO task_instances (id, task_id, date, time_of_day, scheduled_date)
+     VALUES (?, ?, ?, ?, ?)`,
     id,
     taskId,
     dateKey,
     defaults.timeOfDay ?? 'anytime',
-    defaults.scheduledDate ?? null,
-    '[]'
+    defaults.scheduledDate ?? null
   );
   const row = await db.getFirstAsync<TaskInstanceRow>(
     'SELECT * FROM task_instances WHERE task_id = ? AND date = ?',
@@ -167,30 +165,34 @@ export async function adjustDuration(
   );
 }
 
-/** Live duration including any time elapsed since the timer was last started, without touching the DB. */
-export function getLiveDurationSeconds(instance: TaskInstance): number {
+/**
+ * Live duration including any time elapsed since the timer was last started, without touching the DB.
+ * Takes the current time as a parameter (rather than reading Date.now() itself) so it's a pure
+ * function of its inputs — React Compiler memoizes render computations by their inputs, and an
+ * impure function here gets cached against an unchanging `instance` and freezes on screen.
+ */
+export function getLiveDurationSeconds(instance: TaskInstance, nowMs: number): number {
   if (instance.timerState !== 'running' || !instance.timerStartedAt) {
     return instance.currentDurationSeconds;
   }
-  const elapsedSeconds = Math.floor((Date.now() - new Date(instance.timerStartedAt).getTime()) / 1000);
+  const elapsedSeconds = Math.floor((nowMs - new Date(instance.timerStartedAt).getTime()) / 1000);
   return instance.currentDurationSeconds + elapsedSeconds;
 }
 
 export async function completeInstance(
   db: SQLiteDatabase,
   instanceId: string,
-  opts: { durationSeconds?: number; notes?: string | null; completedAt?: string } = {}
+  opts: { durationSeconds?: number; completedAt?: string } = {}
 ): Promise<void> {
   await pauseTimer(db, instanceId); // folds any running elapsed time first
 
   const instance = (await getInstance(db, instanceId))!;
   await db.runAsync(
     `UPDATE task_instances
-     SET completed = 1, completed_at = ?, current_duration_seconds = ?, notes = ?, timer_state = 'idle'
+     SET completed = 1, completed_at = ?, current_duration_seconds = ?, timer_state = 'idle'
      WHERE id = ?`,
     opts.completedAt ?? new Date().toISOString(),
     opts.durationSeconds ?? instance.currentDurationSeconds,
-    opts.notes ?? instance.notes,
     instanceId
   );
 }

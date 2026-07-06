@@ -26,9 +26,7 @@ export function TaskRow({
   const theme = useTheme();
   const { task, instance } = item;
   const isRunning = instance.timerState === 'running';
-  // `now` forces a re-render every second so the live duration ticks while running.
-  void now;
-  const liveSeconds = getLiveDurationSeconds(instance);
+  const liveSeconds = getLiveDurationSeconds(instance, now);
   const expectedMinutes = effectiveExpectedMinutes(task.expectedDuration, dayMode);
   const expectedSeconds = expectedMinutes ? expectedMinutes * 60 : null;
   const hasLogged = liveSeconds > 0 || isRunning;

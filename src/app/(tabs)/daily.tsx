@@ -12,9 +12,8 @@ import type { TimeOfDay } from '@/db/types';
 
 import { CompleteModal } from '@/features/shared/complete-modal';
 import { DeleteChoiceModal } from '@/features/shared/delete-choice-modal';
-import { EditTaskModal } from '@/features/daily/edit-task-modal';
-import { NewTaskModal } from '@/features/daily/new-task-modal';
 import { PieProgress } from '@/features/daily/pie-progress';
+import { TaskFormModal } from '@/features/daily/task-form-modal';
 import { TaskActionsModal } from '@/features/daily/task-actions-modal';
 import { TaskRow } from '@/features/daily/task-row';
 import { TimerModal } from '@/features/daily/timer-modal';
@@ -80,7 +79,7 @@ export default function DailyScreen() {
 
   let runningBanner: { fraction: number; label: string; reached: boolean } | null = null;
   if (runningItem) {
-    const liveSeconds = getLiveDurationSeconds(runningItem.instance);
+    const liveSeconds = getLiveDurationSeconds(runningItem.instance, now);
     const expectedMinutes = effectiveExpectedMinutes(runningItem.task.expectedDuration, dayMode);
     const expectedSeconds = expectedMinutes ? expectedMinutes * 60 : null;
     const reached = expectedSeconds !== null && liveSeconds >= expectedSeconds;
@@ -235,8 +234,8 @@ export default function DailyScreen() {
       )}
 
       {newTaskSection && (
-        <NewTaskModal
-          defaultTimeOfDay={newTaskSection}
+        <TaskFormModal
+          initialTimeOfDay={newTaskSection}
           onCancel={() => setNewTaskSection(null)}
           onSubmit={(input, timeOfDay) => {
             addTask(input, timeOfDay);
@@ -246,11 +245,11 @@ export default function DailyScreen() {
       )}
 
       {editingItem && (
-        <EditTaskModal
+        <TaskFormModal
           task={editingItem.task}
-          timeOfDay={editingItem.instance.timeOfDay ?? 'anytime'}
+          initialTimeOfDay={editingItem.instance.timeOfDay ?? 'anytime'}
           onCancel={() => setEditingTaskId(null)}
-          onSave={(patch, timeOfDay) => {
+          onSubmit={(patch, timeOfDay) => {
             editTask(editingItem.task.id, patch);
             if (timeOfDay !== (editingItem.instance.timeOfDay ?? 'anytime')) {
               moveToTimeOfDay(editingItem.instance.id, timeOfDay);

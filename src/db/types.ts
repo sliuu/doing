@@ -4,21 +4,9 @@ export type TaskSize = 'large' | 'medium' | 'small';
 export type TimeOfDay = 'anytime' | 'morning' | 'afternoon' | 'evening';
 export type TimerState = 'idle' | 'running' | 'paused';
 
-export interface Subtask {
-  id: string;
-  title: string;
-}
-
-export interface SubtaskState {
-  id: string;
-  title: string;
-  done: boolean;
-}
-
 export interface Task {
   id: string;
   title: string;
-  emoji: string | null;
   category: string;
   isSelfCare: boolean;
   isSeed: boolean;
@@ -27,7 +15,6 @@ export interface Task {
   recurrenceRule: RecurrenceRule | null;
   tracksDuration: boolean;
   expectedDuration: number | null; // minutes
-  subtasks: Subtask[];
   orderIndex: number;
   createdAt: string;
   hideOnNoWorkDays: boolean;
@@ -45,10 +32,8 @@ export interface TaskInstance {
   currentDurationSeconds: number;
   timerState: TimerState;
   timerStartedAt: string | null; // ISO timestamp
-  subtaskStates: SubtaskState[];
   completed: boolean;
   completedAt: string | null;
-  notes: string | null;
   orderIndex: number;
 }
 
@@ -60,7 +45,6 @@ export interface Settings {
 export interface TaskRow {
   id: string;
   title: string;
-  emoji: string | null;
   category: string;
   is_self_care: number;
   is_seed: number;
@@ -69,7 +53,6 @@ export interface TaskRow {
   recurrence_rule: string | null;
   tracks_duration: number;
   expected_duration: number | null;
-  subtasks: string;
   order_index: number;
   created_at: string;
   hide_on_no_work_days: number;
@@ -87,10 +70,8 @@ export interface TaskInstanceRow {
   current_duration_seconds: number;
   timer_state: TimerState;
   timer_started_at: string | null;
-  subtask_states: string;
   completed: number;
   completed_at: string | null;
-  notes: string | null;
   order_index: number;
 }
 
@@ -98,7 +79,6 @@ export function taskFromRow(row: TaskRow): Task {
   return {
     id: row.id,
     title: row.title,
-    emoji: row.emoji,
     category: row.category,
     isSelfCare: row.is_self_care === 1,
     isSeed: row.is_seed === 1,
@@ -107,7 +87,6 @@ export function taskFromRow(row: TaskRow): Task {
     recurrenceRule: row.recurrence_rule ? JSON.parse(row.recurrence_rule) : null,
     tracksDuration: row.tracks_duration === 1,
     expectedDuration: row.expected_duration,
-    subtasks: JSON.parse(row.subtasks),
     orderIndex: row.order_index,
     createdAt: row.created_at,
     hideOnNoWorkDays: row.hide_on_no_work_days === 1,
@@ -127,10 +106,8 @@ export function instanceFromRow(row: TaskInstanceRow): TaskInstance {
     currentDurationSeconds: row.current_duration_seconds,
     timerState: row.timer_state,
     timerStartedAt: row.timer_started_at,
-    subtaskStates: JSON.parse(row.subtask_states),
     completed: row.completed === 1,
     completedAt: row.completed_at,
-    notes: row.notes,
     orderIndex: row.order_index,
   };
 }

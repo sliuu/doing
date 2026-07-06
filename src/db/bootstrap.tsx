@@ -1,5 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { Spacing } from '@/constants/theme';
 import { useDb } from '@/db/provider';
 import { getSettings } from '@/db/settings';
 import { ensureInstancesForDate } from '@/db/instances';
@@ -7,19 +10,17 @@ import { ensureSelfCareSeed } from '@/db/seed';
 import { recordAppOpen } from '@/db/streak';
 import { todayKey } from '@/lib/day';
 
-// Hooks that load data on mount (useDaily, useSelfCare) gate their first fetch on this.
-// Without it, a fresh install races: the hooks run before ensureSelfCareSeed creates the
-// seed tasks, find 0 recurring tasks, and render empty pages with no error.
-const DbReadyContext = createContext(false);
+type BootState = { status: 'loading' } | { status: 'ready' } | { status: 'error'; message: string };
 
-export function useDbReady(): boolean {
-  return useContext(DbReadyContext);
-}
-
-/** Runs once per app start: seeds self-care tasks, marks today as opened, and expands today's recurring tasks. */
+/**
+ * Runs once per app start, BEFORE any screen renders: seeds the self-care library on
+ * first launch, marks today as opened (for the streak), and expands today's recurring
+ * tasks into instances. Rendering children only after this finishes means no screen
+ * can ever query the database mid-seed and show a half-empty page.
+ */
 export function DbBootstrap({ children }: { children: ReactNode }) {
   const db = useDb();
-  const [ready, setReady] = useState(false);
+  const [state, setState] = useState<BootState>({ status: 'loading' });
 
   useEffect(() => {
     (async () => {
@@ -29,13 +30,24 @@ export function DbBootstrap({ children }: { children: ReactNode }) {
         const key = todayKey(dayStartHour);
         await recordAppOpen(db, key);
         await ensureInstancesForDate(db, key);
+        setState({ status: 'ready' });
       } catch (e) {
         console.error('[DbBootstrap] initialization error:', e);
-      } finally {
-        setReady(true);
+        setState({ status: 'error', message: e instanceof Error ? e.message : String(e) });
       }
     })();
   }, [db]);
 
-  return <DbReadyContext.Provider value={ready}>{children}</DbReadyContext.Provider>;
+  if (state.status === 'loading') return null;
+
+  if (state.status === 'error') {
+    return (
+      <ThemedView style={{ flex: 1, justifyContent: 'center', padding: Spacing.four, gap: Spacing.two }}>
+        <ThemedText type="subtitle">Something went wrong starting up</ThemedText>
+        <ThemedText themeColor="textSecondary">{state.message}</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  return children;
 }

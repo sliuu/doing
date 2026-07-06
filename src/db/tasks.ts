@@ -7,7 +7,6 @@ import { Task, TaskRow, TaskSize, taskFromRow } from '@/db/types';
 
 export interface NewTaskInput {
   title: string;
-  emoji?: string | null;
   category?: string;
   isSelfCare?: boolean;
   isSeed?: boolean;
@@ -26,11 +25,10 @@ export async function createTask(db: SQLiteDatabase, input: NewTaskInput): Promi
   const id = createId();
   await db.runAsync(
     `INSERT INTO tasks
-      (id, title, emoji, category, is_self_care, is_seed, size, recurring, recurrence_rule, tracks_duration, expected_duration, subtasks, order_index, hide_on_no_work_days, hide_on_low_energy_days, self_care_section)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, title, category, is_self_care, is_seed, size, recurring, recurrence_rule, tracks_duration, expected_duration, order_index, hide_on_no_work_days, hide_on_low_energy_days, self_care_section)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     id,
     input.title,
-    input.emoji ?? null,
     input.category ?? 'uncategorized',
     input.isSelfCare ? 1 : 0,
     input.isSeed ? 1 : 0,
@@ -39,7 +37,6 @@ export async function createTask(db: SQLiteDatabase, input: NewTaskInput): Promi
     input.recurrenceRule ? JSON.stringify(input.recurrenceRule) : null,
     input.tracksDuration ? 1 : 0,
     input.expectedDuration ?? null,
-    '[]',
     input.orderIndex ?? 0,
     input.hideOnNoWorkDays ? 1 : 0,
     input.hideOnLowEnergyDays ? 1 : 0,
@@ -58,12 +55,11 @@ export async function updateTask(db: SQLiteDatabase, id: string, patch: Partial<
   if (!current) return;
   await db.runAsync(
     `UPDATE tasks
-     SET title = ?, emoji = ?, category = ?, size = ?, recurring = ?, recurrence_rule = ?,
-         tracks_duration = ?, expected_duration = ?, subtasks = ?, hide_on_no_work_days = ?, hide_on_low_energy_days = ?,
+     SET title = ?, category = ?, size = ?, recurring = ?, recurrence_rule = ?,
+         tracks_duration = ?, expected_duration = ?, hide_on_no_work_days = ?, hide_on_low_energy_days = ?,
          self_care_section = ?
      WHERE id = ?`,
     patch.title ?? current.title,
-    patch.emoji !== undefined ? patch.emoji : current.emoji,
     patch.category ?? current.category,
     patch.size !== undefined ? patch.size : current.size,
     (patch.recurring ?? current.recurring) ? 1 : 0,
@@ -72,7 +68,6 @@ export async function updateTask(db: SQLiteDatabase, id: string, patch: Partial<
       : current.recurrenceRule ? JSON.stringify(current.recurrenceRule) : null,
     (patch.tracksDuration ?? current.tracksDuration) ? 1 : 0,
     patch.expectedDuration !== undefined ? patch.expectedDuration : current.expectedDuration,
-    JSON.stringify(current.subtasks),
     (patch.hideOnNoWorkDays ?? current.hideOnNoWorkDays) ? 1 : 0,
     (patch.hideOnLowEnergyDays ?? current.hideOnLowEnergyDays) ? 1 : 0,
     patch.selfCareSection !== undefined ? patch.selfCareSection : current.selfCareSection,

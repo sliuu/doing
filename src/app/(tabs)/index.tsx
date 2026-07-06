@@ -9,9 +9,8 @@ import { useTheme } from '@/hooks/use-theme';
 import type { TaskSize } from '@/db/types';
 
 import { CompleteModal } from '@/features/shared/complete-modal';
-import { EditTodoModal } from '@/features/todo/edit-todo-modal';
-import { NewTodoModal } from '@/features/todo/new-todo-modal';
 import { ScheduleModal } from '@/features/todo/schedule-modal';
+import { TodoFormModal } from '@/features/todo/todo-form-modal';
 import { TodoRow } from '@/features/todo/todo-row';
 import { SIZE_SECTIONS, TodoItem } from '@/features/todo/types';
 import { useTodo } from '@/features/todo/use-todo';
@@ -119,7 +118,7 @@ export default function ToDoScreen() {
       )}
 
       {newTodoSize && (
-        <NewTodoModal
+        <TodoFormModal
           defaultSize={newTodoSize}
           onCancel={() => setNewTodoSize(null)}
           onSubmit={(input) => {
@@ -130,10 +129,10 @@ export default function ToDoScreen() {
       )}
 
       {editingItem && (
-        <EditTodoModal
+        <TodoFormModal
           task={editingItem.task}
           onCancel={() => setEditingTaskId(null)}
-          onSave={(patch) => {
+          onSubmit={(patch) => {
             editTask(editingItem.task.id, patch);
             setEditingTaskId(null);
           }}

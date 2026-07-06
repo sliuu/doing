@@ -1,12 +1,11 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-const CURRENT_VERSION = 6;
+const CURRENT_VERSION = 7;
 
 const CREATE_TASKS = `
 CREATE TABLE IF NOT EXISTS tasks (
   id TEXT PRIMARY KEY NOT NULL,
   title TEXT NOT NULL,
-  emoji TEXT,
   category TEXT NOT NULL DEFAULT 'uncategorized',
   is_self_care INTEGER NOT NULL DEFAULT 0,
   is_seed INTEGER NOT NULL DEFAULT 0,
@@ -15,7 +14,6 @@ CREATE TABLE IF NOT EXISTS tasks (
   recurrence_rule TEXT,
   tracks_duration INTEGER NOT NULL DEFAULT 0,
   expected_duration INTEGER,
-  subtasks TEXT NOT NULL DEFAULT '[]',
   order_index INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   hide_on_no_work_days INTEGER NOT NULL DEFAULT 0,
@@ -86,13 +84,20 @@ CREATE TABLE IF NOT EXISTS task_instances (
   current_duration_seconds INTEGER NOT NULL DEFAULT 0,
   timer_state TEXT NOT NULL DEFAULT 'idle',
   timer_started_at TEXT,
-  subtask_states TEXT NOT NULL DEFAULT '[]',
   completed INTEGER NOT NULL DEFAULT 0,
   completed_at TEXT,
-  notes TEXT,
   order_index INTEGER NOT NULL DEFAULT 0,
   UNIQUE (task_id, date)
 );
+`;
+
+// Columns that were never surfaced anywhere in the UI (emoji, notes) or belonged to the
+// removed subtasks feature. Dropped in v7 to keep the schema matched to what the app uses.
+const DROP_UNUSED_COLUMNS = `
+ALTER TABLE tasks DROP COLUMN emoji;
+ALTER TABLE tasks DROP COLUMN subtasks;
+ALTER TABLE task_instances DROP COLUMN subtask_states;
+ALTER TABLE task_instances DROP COLUMN notes;
 `;
 
 const CREATE_TASK_INSTANCES_INDEX = `
@@ -151,6 +156,9 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase) {
   if (currentVersion >= 1 && currentVersion < 6) {
     await db.execAsync(ADD_SELF_CARE_SECTION_COLUMN);
     await db.execAsync(BACKFILL_SEED_SELF_CARE_SECTIONS);
+  }
+  if (currentVersion >= 1 && currentVersion < 7) {
+    await db.execAsync(DROP_UNUSED_COLUMNS);
   }
   await db.execAsync(`PRAGMA user_version = ${CURRENT_VERSION}`);
 }

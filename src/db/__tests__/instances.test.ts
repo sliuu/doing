@@ -35,7 +35,6 @@ describe('getOrCreateInstance', () => {
     expect(instance.date).toBe('2026-06-19');
     expect(instance.timeOfDay).toBe('morning');
     expect(instance.completed).toBe(false);
-    expect(instance.subtaskStates).toEqual([]);
   });
 
   it('defaults timeOfDay to anytime when none is given', async () => {
@@ -219,7 +218,7 @@ describe('timer + duration tracking', () => {
     jest.advanceTimersByTime(30 * 1000);
 
     const live = await getInstance(db, instance.id);
-    expect(getLiveDurationSeconds(live!)).toBe(30);
+    expect(getLiveDurationSeconds(live!, Date.now())).toBe(30);
     expect(live?.currentDurationSeconds).toBe(0); // unchanged until paused
   });
 
@@ -257,13 +256,12 @@ describe('timer + duration tracking', () => {
     await startTimer(db, instance.id);
     jest.advanceTimersByTime(45 * 1000);
 
-    await completeInstance(db, instance.id, { notes: 'done early' });
+    await completeInstance(db, instance.id);
 
     const completed = await getInstance(db, instance.id);
     expect(completed?.completed).toBe(true);
     expect(completed?.timerState).toBe('idle');
     expect(completed?.currentDurationSeconds).toBe(45);
-    expect(completed?.notes).toBe('done early');
     expect(completed?.completedAt).not.toBeNull();
   });
 
