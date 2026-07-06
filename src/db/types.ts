@@ -75,6 +75,22 @@ export interface TaskInstanceRow {
   order_index: number;
 }
 
+/**
+ * Parses a JSON column, falling back (and logging) instead of throwing on bad data.
+ * A single malformed row must never blow up the whole app — one corrupt task would
+ * otherwise crash DbBootstrap and blank every screen. Handles NULL, empty, and legacy
+ * junk like the literal string "undefined" left by earlier builds.
+ */
+function parseJsonColumn<T>(value: string | null, fallback: T, context: string): T {
+  if (value == null || value === '' || value === 'undefined' || value === 'null') return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    console.warn(`[db] ignoring malformed JSON in ${context}:`, value);
+    return fallback;
+  }
+}
+
 export function taskFromRow(row: TaskRow): Task {
   return {
     id: row.id,
@@ -84,14 +100,14 @@ export function taskFromRow(row: TaskRow): Task {
     isSeed: row.is_seed === 1,
     size: row.size,
     recurring: row.recurring === 1,
-    recurrenceRule: row.recurrence_rule ? JSON.parse(row.recurrence_rule) : null,
+    recurrenceRule: parseJsonColumn(row.recurrence_rule, null, 'tasks.recurrence_rule'),
     tracksDuration: row.tracks_duration === 1,
     expectedDuration: row.expected_duration,
     orderIndex: row.order_index,
     createdAt: row.created_at,
     hideOnNoWorkDays: row.hide_on_no_work_days === 1,
     hideOnLowEnergyDays: row.hide_on_low_energy_days === 1,
-    excludedDates: JSON.parse(row.excluded_dates),
+    excludedDates: parseJsonColumn(row.excluded_dates, [], 'tasks.excluded_dates'),
     selfCareSection: row.self_care_section,
   };
 }
