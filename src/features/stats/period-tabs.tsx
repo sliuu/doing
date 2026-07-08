@@ -27,7 +27,7 @@ export function PeriodTabs({ period, onChange }: { period: StatsPeriod; onChange
             { borderColor: theme.backgroundSelected },
             period === opt.key && { backgroundColor: theme.primary, borderColor: theme.primary },
           ]}>
-          <ThemedText style={period === opt.key ? { color: '#fff' } : undefined} type="small">
+          <ThemedText style={period === opt.key ? { color: theme.onPrimary } : undefined} type="small">
             {opt.label}
           </ThemedText>
         </Pressable>

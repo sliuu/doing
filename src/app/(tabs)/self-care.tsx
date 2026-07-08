@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ConfettiBurst, useCelebration } from '@/components/confetti-burst';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -20,6 +21,7 @@ export default function SelfCareScreen() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [newSection, setNewSection] = useState<SelfCareSection | null>(null);
   const [deleteChoiceInstanceId, setDeleteChoiceInstanceId] = useState<string | null>(null);
+  const { burst, celebrate, clearBurst } = useCelebration();
 
   const editingItem = items.find((i) => i.task.id === editingTaskId) ?? null;
   const deleteChoiceItem = items.find((i) => i.instance.id === deleteChoiceInstanceId) ?? null;
@@ -65,7 +67,10 @@ export default function SelfCareScreen() {
                   <SelfCareRow
                     key={item.task.id}
                     item={item}
-                    onToggleComplete={() => toggleComplete(item)}
+                    onToggleComplete={(pos) => {
+                      toggleComplete(item);
+                      if (!item.instance.completed) celebrate(pos);
+                    }}
                     onEdit={() => setEditingTaskId(item.task.id)}
                     onDelete={() => requestDelete(item)}
                   />
@@ -116,6 +121,8 @@ export default function SelfCareScreen() {
           }}
         />
       )}
+
+      {burst && <ConfettiBurst key={burst.id} x={burst.x} y={burst.y} onDone={clearBurst} />}
     </ThemedView>
   );
 }

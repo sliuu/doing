@@ -48,7 +48,7 @@ export function DatePickerField({ value, onChange }: { value: string; onChange: 
             <Pressable
               onPress={() => setOpen(false)}
               style={[styles.doneButton, { backgroundColor: theme.primary }]}>
-              <ThemedText style={{ color: '#fff' }}>Done</ThemedText>
+              <ThemedText style={{ color: theme.onPrimary }}>Done</ThemedText>
             </Pressable>
           )}
         </View>

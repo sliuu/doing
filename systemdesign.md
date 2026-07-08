@@ -131,6 +131,7 @@ Other tables:
 
 - **`settings`** — a single row (`id = 0`) holding `day_start_hour`.
 - **`app_opens`** — one row per day the app was opened; the streak is counted by walking backwards from today until a day is missing.
+- **`categories`** — one row per category: its name and a user-picked color (from a fixed palette of eight muted swatches in `db/categories.ts`). Task rows show the color as a left stripe. `uncategorized` deliberately has no row — it's the absence of a category. Rows are created when the user adds a category in the picker; `seedCategories` backfills defaults plus anything already in use.
 
 ### The "logical day"
 
@@ -140,7 +141,7 @@ The day does **not** roll over at midnight — it rolls over at `day_start_hour`
 
 `db/schema.ts` holds the schema and a version number (`CURRENT_VERSION`, currently 7). On every app start, `migrateDbIfNeeded` reads the database's stored version (`PRAGMA user_version`) and applies each upgrade step it's missing, in order, then stamps the new version. A fresh install creates the latest schema directly; an existing phone gets stepped forward. Migrations only go forward — there's no rollback, which is fine for a single-user app.
 
-Migration 7 is a good example of deliberate deletion: it drops columns that no UI ever surfaced (`emoji`, `notes`) or that belonged to a removed feature (`subtasks`, `subtask_states`). Dead schema invites dead code.
+Migration 7 is a good example of deliberate deletion: it drops columns that no UI ever surfaced (`emoji`, `notes`) or that belonged to a removed feature (`subtasks`, `subtask_states`). Dead schema invites dead code. Migration 8 adds the `categories` table and shows the other pattern: a migration step that needs logic (assigning default colors, backfilling in-use categories) can be plain TypeScript called from the migration runner, not just SQL strings.
 
 ### Row types vs. domain types
 
@@ -214,8 +215,9 @@ Modals that are *not* forms (timer, complete-confirmation, schedule, action shee
 
 ## 8. Theming
 
-- `constants/theme.ts` — one fixed dark-maroon palette (identical in light and dark mode, deliberately), the font stack (system serif for display text, sans for UI), and a spacing scale (`Spacing.one` = 4 up to `Spacing.six` = 64). Using the scale instead of raw pixel numbers keeps spacing consistent.
-- `components/themed-text.tsx` / `themed-view.tsx` — the only components that read the palette directly. Everything else styles through them (`<ThemedText type="subtitle" themeColor="textSecondary">`), so a palette change is a one-file edit.
+- `constants/theme.ts` — the design tokens: one fixed near-black warm palette (the app is dark-only; there is deliberately no light/dark switching code), the font stack (system serif for display text, sans for UI), and a spacing scale (`Spacing.one` = 4 up to `Spacing.six` = 64). Notable tokens: `primary` (the gold accent) always pairs with `onPrimary` (dark text for anything rendered on gold), and `overlay` is the dimmed backdrop behind every modal. **No component is allowed to hard-code a color** — everything reads tokens via `useTheme()` (or `Colors` in static styles), so restyling is a one-file change.
+- `components/themed-text.tsx` / `themed-view.tsx` — the standard text/view primitives (`<ThemedText type="subtitle" themeColor="textSecondary">`).
+- `components/confetti-burst.tsx` — the completion celebration: `useCelebration()` gives a screen a `celebrate(pos)` function (success haptic + confetti burst at the tapped checkbox) and the burst state to render. Built on React Native's core `Animated` API — no extra dependency.
 
 ---
 

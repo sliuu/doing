@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Fonts, Spacing } from '@/constants/theme';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getLiveDurationSeconds } from '@/db/instances';
 import { formatDurationShort, formatTimer } from '@/lib/format';
@@ -70,7 +70,18 @@ export function TimerModal({
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardWrapper}>
         <ThemedView style={[styles.card, { backgroundColor: theme.background }]} type="background">
-          <ThemedText type="subtitle">{task.title}</ThemedText>
+          <View style={styles.headerRow}>
+            <ThemedText type="subtitle" style={{ flex: 1 }} numberOfLines={2}>
+              {task.title}
+            </ThemedText>
+            <Pressable
+              onPress={onComplete}
+              style={[styles.markDoneButton, { backgroundColor: theme.primary }]}>
+              <ThemedText type="small" style={{ color: theme.onPrimary }}>
+                Mark done
+              </ThemedText>
+            </Pressable>
+          </View>
 
           <View style={styles.targetRow}>
             <ThemedText type="small" themeColor="textSecondary">
@@ -121,7 +132,7 @@ export function TimerModal({
           <Pressable
             onPress={onToggleRunning}
             style={[styles.primaryButton, { backgroundColor: isRunning ? theme.backgroundSelected : theme.primary }]}>
-            <ThemedText style={{ color: isRunning ? theme.text : '#fff' }}>
+            <ThemedText style={{ color: isRunning ? theme.text : theme.onPrimary }}>
               {isRunning ? 'Pause' : 'Start'}
             </ThemedText>
           </Pressable>
@@ -144,11 +155,6 @@ export function TimerModal({
             <Pressable onPress={onClose} style={styles.actionButton}>
               <ThemedText themeColor="textSecondary">Minimize</ThemedText>
             </Pressable>
-            <Pressable
-              onPress={onComplete}
-              style={[styles.actionButton, { backgroundColor: theme.primary, borderRadius: Spacing.two }]}>
-              <ThemedText style={{ color: '#fff' }}>Done</ThemedText>
-            </Pressable>
           </View>
         </ThemedView>
         </Pressable>
@@ -160,7 +166,7 @@ export function TimerModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: Colors.overlay,
     justifyContent: 'center',
     padding: Spacing.four,
   },
@@ -171,6 +177,16 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     padding: Spacing.four,
     gap: Spacing.three,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+  },
+  markDoneButton: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Spacing.three,
   },
   targetRow: {
     flexDirection: 'row',

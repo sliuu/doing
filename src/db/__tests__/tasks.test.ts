@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { createTask, deleteTask, excludeDate, getTask, getTasksByIds, listCategories, listTasks, updateTask } from '@/db/tasks';
+import { createTask, deleteTask, excludeDate, getTask, getTasksByIds, listTasks, updateTask } from '@/db/tasks';
 import { createTestDb } from '@/test-utils/sqlite';
 
 describe('tasks', () => {
@@ -96,22 +96,6 @@ describe('tasks', () => {
     const updated = await getTask(db, task.id);
     expect(updated?.hideOnNoWorkDays).toBe(true);
     expect(updated?.hideOnLowEnergyDays).toBe(true);
-  });
-
-  it('lists seeded categories plus any in-use categories, deduplicated and sorted', async () => {
-    await createTask(db, { title: 'A', category: 'work' });
-    await createTask(db, { title: 'B', category: 'zzz-custom' });
-    await createTask(db, { title: 'C', category: 'zzz-custom' });
-
-    const categories = await listCategories(db);
-    expect(categories).toEqual(['health', 'hobbies', 'self-care', 'spirituality', 'work', 'zzz-custom']);
-  });
-
-  it('excludes the default uncategorized bucket from category listings', async () => {
-    await createTask(db, { title: 'Uncategorized task' });
-
-    const categories = await listCategories(db);
-    expect(categories).not.toContain('uncategorized');
   });
 
   it('starts with no excluded dates, and excludeDate appends without duplicating', async () => {

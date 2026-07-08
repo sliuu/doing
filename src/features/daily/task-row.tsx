@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { PauseIcon, PlayIcon } from '@/components/icons';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getLiveDurationSeconds } from '@/db/instances';
@@ -13,18 +14,21 @@ export function TaskRow({
   now,
   dayMode,
   onToggleComplete,
-  onStartTimer,
+  onToggleRunning,
+  onOpenTimer,
   onPress,
 }: {
   item: DailyItem;
   now: number;
   dayMode: DayMode;
-  onToggleComplete: () => void;
-  onStartTimer: () => void;
+  /** Receives the screen position of the tap, so completion effects can burst from it. */
+  onToggleComplete: (pos: { x: number; y: number }) => void;
+  onToggleRunning: () => void;
+  onOpenTimer: () => void;
   onPress: () => void;
 }) {
   const theme = useTheme();
-  const { task, instance } = item;
+  const { task, instance, categoryColor } = item;
   const isRunning = instance.timerState === 'running';
   const liveSeconds = getLiveDurationSeconds(instance, now);
   const expectedMinutes = effectiveExpectedMinutes(task.expectedDuration, dayMode);
@@ -40,20 +44,29 @@ export function TaskRow({
       : liveLabel;
 
   return (
-    <Pressable onPress={onPress} style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.row,
+        { backgroundColor: theme.backgroundElement },
+        instance.completed && styles.completedRow,
+        pressed && styles.pressed,
+      ]}>
+      {categoryColor && <View style={[styles.categoryStripe, { backgroundColor: categoryColor }]} />}
+
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: instance.completed }}
         onPress={(e) => {
           e.stopPropagation();
-          onToggleComplete();
+          onToggleComplete({ x: e.nativeEvent.pageX, y: e.nativeEvent.pageY });
         }}
         style={[
           styles.checkbox,
           { borderColor: theme.primary },
           instance.completed && { backgroundColor: theme.primary },
         ]}>
-        {instance.completed && <ThemedText style={{ color: '#fff' }}>✓</ThemedText>}
+        {instance.completed && <ThemedText style={{ color: theme.onPrimary }}>✓</ThemedText>}
       </Pressable>
 
       <View style={{ flex: 1 }}>
@@ -67,20 +80,37 @@ export function TaskRow({
 
       {task.tracksDuration && (
         <View style={styles.durationRow}>
-          <ThemedText type="small" themeColor={isRunning ? 'today' : 'textSecondary'}>
-            {isRunning ? '● ' : ''}
-            {durationLabel}
-          </ThemedText>
+          {/* Tapping the time opens the full timer view; the icon button toggles running. */}
+          <Pressable
+            hitSlop={Spacing.two}
+            onPress={(e) => {
+              e.stopPropagation();
+              onOpenTimer();
+            }}>
+            <ThemedText type="small" themeColor={isRunning ? 'today' : 'textSecondary'}>
+              {durationLabel}
+            </ThemedText>
+          </Pressable>
           {!instance.completed && (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={isRunning ? 'Pause timer' : 'Start timer'}
+              hitSlop={Spacing.one}
               onPress={(e) => {
                 e.stopPropagation();
-                onStartTimer();
+                onToggleRunning();
               }}
-              style={[styles.startButton, { backgroundColor: isRunning ? theme.todaySoft : theme.primarySoft }]}>
-              <ThemedText type="small" themeColor={isRunning ? 'today' : 'primary'}>
-                {isRunning ? 'Running' : instance.timerState === 'paused' ? 'Resume' : 'Start'}
-              </ThemedText>
+              style={[
+                styles.playButton,
+                { backgroundColor: isRunning ? theme.todaySoft : theme.primarySoft },
+                // The triangle reads as centered when nudged right slightly.
+                !isRunning && { paddingLeft: 2 },
+              ]}>
+              {isRunning ? (
+                <PauseIcon size={13} color={theme.today} />
+              ) : (
+                <PlayIcon size={13} color={theme.primary} />
+              )}
             </Pressable>
           )}
         </View>
@@ -96,6 +126,20 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     padding: Spacing.three,
     borderRadius: Spacing.two,
+    overflow: 'hidden',
+  },
+  completedRow: {
+    opacity: 0.55,
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+  categoryStripe: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
   checkbox: {
     width: 24,
@@ -113,9 +157,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
   },
-  startButton: {
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 4,
-    borderRadius: Spacing.two,
+  playButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

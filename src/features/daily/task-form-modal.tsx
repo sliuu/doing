@@ -7,7 +7,6 @@ import { CategoryPicker } from '@/features/shared/category-picker';
 import { DurationPicker } from '@/features/shared/duration-picker';
 import { ChipRow, FormActions, FormField, FormSheet, FormTextInput, SwitchRow } from '@/features/shared/form-sheet';
 import { draftFromTask, isDraftValid, RecurrencePicker, ruleFromDraft } from '@/features/shared/recurrence-picker';
-import { useCategories } from '@/features/shared/use-categories';
 import { TIME_OF_DAY_SECTIONS } from '@/features/daily/types';
 
 /** Create/edit form for a Today-page task. Pass `task` to edit, omit it to create. */
@@ -24,7 +23,6 @@ export function TaskFormModal({
   onSubmit: (input: NewTaskInput, timeOfDay: TimeOfDay) => void;
   onDelete?: () => void;
 }) {
-  const categories = useCategories();
   const [title, setTitle] = useState(task?.title ?? '');
   const [category, setCategory] = useState(task?.category ?? 'uncategorized');
   const [recurrence, setRecurrence] = useState(draftFromTask(task));
@@ -63,7 +61,7 @@ export function TaskFormModal({
       </FormField>
 
       <FormField label="Category">
-        <CategoryPicker value={category} categories={categories} onChange={setCategory} />
+        <CategoryPicker value={category} onChange={setCategory} />
       </FormField>
 
       <RecurrencePicker draft={recurrence} onChange={setRecurrence} />

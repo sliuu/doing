@@ -3,6 +3,8 @@ import type { Task, TaskInstance, TimeOfDay } from '@/db/types';
 export interface DailyItem {
   instance: TaskInstance;
   task: Task;
+  /** The task's category color, joined in at load time (null for uncategorized). */
+  categoryColor: string | null;
 }
 
 export type DailySections = Record<TimeOfDay, DailyItem[]>;

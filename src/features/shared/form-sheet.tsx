@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
@@ -103,7 +103,7 @@ export function ChipRow<K extends string | number>({
             { borderColor: theme.backgroundSelected },
             isSelected(opt.key) && { backgroundColor: theme.primary, borderColor: theme.primary },
           ]}>
-          <ThemedText style={isSelected(opt.key) ? { color: '#fff' } : undefined} type="small">
+          <ThemedText style={isSelected(opt.key) ? { color: theme.onPrimary } : undefined} type="small">
             {opt.label}
           </ThemedText>
         </Pressable>
@@ -130,7 +130,6 @@ export function SwitchRow({
         value={value}
         onValueChange={onValueChange}
         trackColor={{ true: theme.primary, false: theme.backgroundSelected }}
-        thumbColor="#fff"
         ios_backgroundColor={theme.backgroundSelected}
       />
     </View>
@@ -173,7 +172,7 @@ export function FormActions({
           styles.actionButton,
           { backgroundColor: canSubmit ? theme.primary : theme.backgroundSelected, borderRadius: Spacing.two },
         ]}>
-        <ThemedText style={{ color: canSubmit ? '#fff' : theme.textSecondary }}>{submitLabel}</ThemedText>
+        <ThemedText style={{ color: canSubmit ? theme.onPrimary : theme.textSecondary }}>{submitLabel}</ThemedText>
       </Pressable>
     </View>
   );
@@ -182,7 +181,7 @@ export function FormActions({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: Colors.overlay,
     justifyContent: 'flex-end',
   },
   card: {

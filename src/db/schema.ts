@@ -1,6 +1,8 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-const CURRENT_VERSION = 7;
+import { seedCategories } from '@/db/categories';
+
+const CURRENT_VERSION = 8;
 
 const CREATE_TASKS = `
 CREATE TABLE IF NOT EXISTS tasks (
@@ -122,6 +124,15 @@ CREATE TABLE IF NOT EXISTS app_opens (
 );
 `;
 
+// v8: user-pickable colors per category. Rows are created lazily as categories are
+// added; seedCategories backfills defaults plus any category already in use on tasks.
+const CREATE_CATEGORIES = `
+CREATE TABLE IF NOT EXISTS categories (
+  name TEXT PRIMARY KEY NOT NULL,
+  color TEXT NOT NULL
+);
+`;
+
 export async function migrateDbIfNeeded(db: SQLiteDatabase) {
   await db.execAsync('PRAGMA foreign_keys = ON;');
 
@@ -159,6 +170,10 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase) {
   }
   if (currentVersion >= 1 && currentVersion < 7) {
     await db.execAsync(DROP_UNUSED_COLUMNS);
+  }
+  if (currentVersion < 8) {
+    await db.execAsync(CREATE_CATEGORIES);
+    await seedCategories(db);
   }
   await db.execAsync(`PRAGMA user_version = ${CURRENT_VERSION}`);
 }

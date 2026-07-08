@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Fonts, Spacing } from '@/constants/theme';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDurationShort } from '@/lib/format';
 import { DatePickerField } from '@/features/shared/date-picker-field';
@@ -154,7 +154,7 @@ export function CompleteModal({
               <Pressable
                 onPress={handleConfirm}
                 style={[styles.actionButton, { backgroundColor: theme.primary, borderRadius: Spacing.two }]}>
-                <ThemedText style={{ color: '#fff' }}>Mark done</ThemedText>
+                <ThemedText style={{ color: theme.onPrimary }}>Mark done</ThemedText>
               </Pressable>
             </View>
           </ThemedView>
@@ -167,7 +167,7 @@ export function CompleteModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: Colors.overlay,
     justifyContent: 'center',
     padding: Spacing.four,
   },

@@ -1,65 +1,63 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
-import '@/global.css';
-
 import { Platform } from 'react-native';
 
-/** A single fixed dark-maroon aesthetic — intentionally the same in both schemes. */
-const palette = {
+/**
+ * The design tokens for the whole app. Components must never hard-code a color —
+ * everything reads from this palette (usually via `useTheme()`), so restyling the
+ * app is a one-file change.
+ *
+ * The app is intentionally dark-only: one fixed near-black, warm palette,
+ * regardless of the system light/dark setting.
+ */
+export const Colors = {
+  /** Body text — warm off-white. */
   text: '#F1E3D6',
-  background: '#190a0a',
-  backgroundElement: '#2b1414',
-  backgroundSelected: '#3d1c1c',
-  textSecondary: '#b08d83',
+  /** Muted text: labels, hints, secondary info. */
+  textSecondary: '#a89086',
+  /** Screen background — near-black with a whisper of warmth. */
+  background: '#131010',
+  /** Cards and rows sitting on the background. */
+  backgroundElement: '#231b1b',
+  /** Pressed/selected surfaces and input borders. */
+  backgroundSelected: '#372a2a',
+  /** The accent — muted gold. Buttons, active chips, checkboxes. */
   primary: '#ddb97f',
-  primarySoft: '#3a2a1c',
+  /** Text/icons rendered on top of `primary`. */
+  onPrimary: '#2b1d0d',
+  /** Soft tint of the accent, for subtle button backgrounds. */
+  primarySoft: '#3a2d1c',
+  /** "Scheduled for a date" accents on to-dos. */
   scheduled: '#93a3c9',
   scheduledSoft: '#23283a',
+  /** "Today" accents: running timers, the today banner. */
   today: '#d8b26b',
   todaySoft: '#3a2e18',
+  /** Destructive actions. */
   danger: '#e2666b',
-  border: '#4a2424',
-  surface: '#1f0e0e',
+  /** The day-mode pill when active (inverted: light bg, dark text). */
   pill: '#f2e6d8',
   pillText: '#3a1414',
-  tabActive: 'rgba(233, 205, 162, 0.16)',
+  /** Highlight behind the active tab icon. */
+  tabActive: 'rgba(221, 185, 127, 0.14)',
+  /** Dimmed backdrop behind modals. */
+  overlay: 'rgba(0, 0, 0, 0.5)',
 } as const;
 
-export const Colors = {
-  light: palette,
-  dark: palette,
-} as const;
-
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export type ThemeColor = keyof typeof Colors;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
+    /** iOS system sans (UI text). */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
+    /** iOS system serif (display headings, section labels). */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
   },
   default: {
     sans: 'normal',
     serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
   },
 });
 
+/** Spacing scale — use these instead of raw pixel numbers to keep rhythm consistent. */
 export const Spacing = {
   half: 2,
   one: 4,
@@ -69,6 +67,3 @@ export const Spacing = {
   five: 32,
   six: 64,
 } as const;
-
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;

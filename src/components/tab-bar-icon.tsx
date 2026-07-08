@@ -22,7 +22,7 @@ export function TabBarIcon({
   size?: number;
   focused: boolean;
 }) {
-  const theme = Colors.dark;
+  const theme = Colors;
   const color = focused ? theme.primary : theme.textSecondary;
 
   if (render) return <>{render(color)}</>;
@@ -45,7 +45,7 @@ export function TabBarButton({
   accessibilityState?: { selected?: boolean } | null;
   testID?: string;
 }) {
-  const theme = Colors.dark;
+  const theme = Colors;
   const focused = accessibilityState?.selected ?? false;
 
   return (

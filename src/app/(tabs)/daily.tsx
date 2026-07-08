@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ConfettiBurst, useCelebration } from '@/components/confetti-burst';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Fonts, Spacing } from '@/constants/theme';
@@ -60,6 +61,11 @@ export default function DailyScreen() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [actionsInstanceId, setActionsInstanceId] = useState<string | null>(null);
   const [deleteChoiceInstanceId, setDeleteChoiceInstanceId] = useState<string | null>(null);
+
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const { burst, celebrate, clearBurst } = useCelebration();
+  // Where the completing tap happened, so confetti after the CompleteModal bursts from the row.
+  const [pendingBurstPos, setPendingBurstPos] = useState<{ x: number; y: number } | null>(null);
 
   const allItems: DailyItem[] = Object.values(sections).flat();
   const activeTimerItem = allItems.find((i) => i.instance.id === activeTimerInstanceId) ?? null;
@@ -159,8 +165,18 @@ export default function DailyScreen() {
               {todayTodos.map((item) => (
                 <Pressable
                   key={item.task.id}
-                  onPress={() => toggleTodoComplete(item)}
-                  style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
+                  onPress={(e) => {
+                    toggleTodoComplete(item);
+                    celebrate({ x: e.nativeEvent.pageX, y: e.nativeEvent.pageY });
+                  }}
+                  style={({ pressed }) => [
+                    styles.row,
+                    { backgroundColor: theme.backgroundElement },
+                    pressed && { opacity: 0.75 },
+                  ]}>
+                  {item.categoryColor && (
+                    <View style={[styles.categoryStripe, { backgroundColor: item.categoryColor }]} />
+                  )}
                   <View style={[styles.checkbox, { borderColor: theme.primary }]} />
                   <ThemedText style={{ flex: 1 }}>{item.task.title}</ThemedText>
                 </Pressable>
@@ -185,14 +201,20 @@ export default function DailyScreen() {
                   item={item}
                   now={now}
                   dayMode={dayMode}
-                  onToggleComplete={() => {
+                  onToggleComplete={(pos) => {
                     if (item.instance.completed) {
                       toggleComplete(item.instance.id, true);
-                    } else {
+                    } else if (item.task.tracksDuration) {
+                      // Duration-tracked tasks confirm logged time first; confetti fires on confirm.
+                      setPendingBurstPos(pos);
                       setCompletingInstanceId(item.instance.id);
+                    } else {
+                      toggleComplete(item.instance.id, false);
+                      celebrate(pos);
                     }
                   }}
-                  onStartTimer={() => toggleRunning(item.instance.id, item.instance.timerState === 'running')}
+                  onToggleRunning={() => toggleRunning(item.instance.id, item.instance.timerState === 'running')}
+                  onOpenTimer={() => setActiveTimerInstanceId(item.instance.id)}
                   onPress={() => setActionsInstanceId(item.instance.id)}
                 />
               ))}
@@ -224,10 +246,15 @@ export default function DailyScreen() {
           task={completingItem.task}
           instance={completingItem.instance}
           defaultDateKey={dateKey}
-          onCancel={() => setCompletingInstanceId(null)}
+          onCancel={() => {
+            setCompletingInstanceId(null);
+            setPendingBurstPos(null);
+          }}
           onConfirm={(opts) => {
             toggleComplete(completingItem.instance.id, false, opts);
             setCompletingInstanceId(null);
+            celebrate(pendingBurstPos ?? { x: windowWidth / 2, y: windowHeight / 2 });
+            setPendingBurstPos(null);
           }}
           onAddTime={(delta) => bumpDuration(completingItem.instance.id, delta)}
         />
@@ -296,6 +323,8 @@ export default function DailyScreen() {
           }}
         />
       )}
+
+      {burst && <ConfettiBurst key={burst.id} x={burst.x} y={burst.y} onDone={clearBurst} />}
     </ThemedView>
   );
 }
@@ -344,6 +373,14 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     padding: Spacing.three,
     borderRadius: Spacing.two,
+    overflow: 'hidden',
+  },
+  categoryStripe: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
   checkbox: {
     width: 24,

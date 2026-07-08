@@ -1,4 +1,22 @@
 import { View } from 'react-native';
+import Svg, { Path, Rect } from 'react-native-svg';
+
+export function PlayIcon({ size = 14, color }: { size?: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M8 5.5v13a1 1 0 0 0 1.54.84l10-6.5a1 1 0 0 0 0-1.68l-10-6.5A1 1 0 0 0 8 5.5z" fill={color} />
+    </Svg>
+  );
+}
+
+export function PauseIcon({ size = 14, color }: { size?: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Rect x={6} y={5} width={4.5} height={14} rx={1.5} fill={color} />
+      <Rect x={13.5} y={5} width={4.5} height={14} rx={1.5} fill={color} />
+    </Svg>
+  );
+}
 
 const TEETH = 8;
 

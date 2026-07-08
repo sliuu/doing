@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ConfettiBurst, useCelebration } from '@/components/confetti-burst';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -24,6 +25,11 @@ export default function ToDoScreen() {
   const [newTodoSize, setNewTodoSize] = useState<TaskSize | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const { burst, celebrate, clearBurst } = useCelebration();
+  // Where the completing tap happened, so confetti after the CompleteModal bursts from the row.
+  const [pendingBurstPos, setPendingBurstPos] = useState<{ x: number; y: number } | null>(null);
+
   const allItems: TodoItem[] = Object.values(sections).flat();
   const finishedItems = allItems.filter((item) => item.instance?.completed);
   const completingItem = allItems.find((i) => i.task.id === completingTaskId) ?? null;
@@ -43,10 +49,11 @@ export default function ToDoScreen() {
       key={item.task.id}
       item={item}
       todayKey={today}
-      onToggleComplete={() => {
+      onToggleComplete={(pos) => {
         if (item.instance?.completed) {
           toggleComplete(item, undefined);
         } else {
+          setPendingBurstPos(pos);
           setCompletingTaskId(item.task.id);
         }
       }}
@@ -96,10 +103,15 @@ export default function ToDoScreen() {
           instance={completingItem.instance}
           defaultDateKey={today}
           allowDateSelection
-          onCancel={() => setCompletingTaskId(null)}
+          onCancel={() => {
+            setCompletingTaskId(null);
+            setPendingBurstPos(null);
+          }}
           onConfirm={(opts) => {
             toggleComplete(completingItem, opts);
             setCompletingTaskId(null);
+            celebrate(pendingBurstPos ?? { x: windowWidth / 2, y: windowHeight / 2 });
+            setPendingBurstPos(null);
           }}
           onAddTime={(delta) => addTime(completingItem, delta)}
         />
@@ -142,6 +154,8 @@ export default function ToDoScreen() {
           }}
         />
       )}
+
+      {burst && <ConfettiBurst key={burst.id} x={burst.x} y={burst.y} onDone={clearBurst} />}
     </ThemedView>
   );
 }

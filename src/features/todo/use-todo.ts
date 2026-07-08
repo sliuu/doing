@@ -10,6 +10,7 @@ import {
   setScheduledDate,
   uncompleteInstance,
 } from '@/db/instances';
+import { listCategories } from '@/db/categories';
 import { createTask, deleteTask, listTasks, NewTaskInput, updateTask } from '@/db/tasks';
 import { todayKey } from '@/lib/day';
 import type { TaskSize } from '@/db/types';
@@ -43,10 +44,15 @@ export function useTodo() {
     const { dayStartHour } = await getSettings(db);
     const key = todayKey(dayStartHour);
     const tasks = await listTasks(db, { recurring: false, isSelfCare: false });
+    const colorByCategory = new Map((await listCategories(db)).map((c) => [c.name, c.color]));
     const items: TodoItem[] = [];
     for (const task of tasks) {
       const instances = await listInstancesForTask(db, task.id);
-      items.push({ task, instance: instances[0] ?? null });
+      items.push({
+        task,
+        instance: instances[0] ?? null,
+        categoryColor: colorByCategory.get(task.category) ?? null,
+      });
     }
     setToday(key);
     setSections(groupBySize(items));

@@ -1,16 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useDb } from '@/db/provider';
-import { listCategories } from '@/db/tasks';
+import { Category, listCategories, upsertCategory } from '@/db/categories';
 
-/** Seeded + in-use category names, for populating the CategoryPicker dropdown. */
-export function useCategories(): string[] {
+/** The category list (with colors), plus mutations for the CategoryPicker. */
+export function useCategories() {
   const db = useDb();
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  useEffect(() => {
-    listCategories(db).then(setCategories);
+  const refresh = useCallback(async () => {
+    setCategories(await listCategories(db));
   }, [db]);
 
-  return categories;
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional initial data load on mount
+    refresh();
+  }, [refresh]);
+
+  const saveCategory = useCallback(
+    async (name: string, color: string) => {
+      await upsertCategory(db, name, color);
+      await refresh();
+    },
+    [db, refresh]
+  );
+
+  return { categories, saveCategory };
 }

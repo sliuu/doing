@@ -3,6 +3,8 @@ import type { Task, TaskInstance, TaskSize } from '@/db/types';
 export interface TodoItem {
   task: Task;
   instance: TaskInstance | null;
+  /** The task's category color, joined in at load time (null for uncategorized). */
+  categoryColor: string | null;
 }
 
 export type ScheduleState = 'none' | 'today' | 'scheduled';

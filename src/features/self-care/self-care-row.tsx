@@ -13,7 +13,8 @@ export function SelfCareRow({
   onDelete,
 }: {
   item: SelfCareItem;
-  onToggleComplete: () => void;
+  /** Receives the screen position of the tap, so completion effects can burst from it. */
+  onToggleComplete: (pos: { x: number; y: number }) => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -21,16 +22,23 @@ export function SelfCareRow({
   const completed = item.instance.completed;
 
   return (
-    <Pressable onPress={onEdit} style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
+    <Pressable
+      onPress={onEdit}
+      style={({ pressed }) => [
+        styles.row,
+        { backgroundColor: theme.backgroundElement },
+        completed && styles.completedRow,
+        pressed && styles.pressed,
+      ]}>
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: completed }}
         onPress={(e) => {
           e.stopPropagation();
-          onToggleComplete();
+          onToggleComplete({ x: e.nativeEvent.pageX, y: e.nativeEvent.pageY });
         }}
         style={[styles.checkbox, { borderColor: theme.primary }, completed && { backgroundColor: theme.primary }]}>
-        {completed && <ThemedText style={{ color: '#fff' }}>✓</ThemedText>}
+        {completed && <ThemedText style={{ color: theme.onPrimary }}>✓</ThemedText>}
       </Pressable>
 
       <ThemedText
@@ -61,6 +69,12 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     padding: Spacing.three,
     borderRadius: Spacing.two,
+  },
+  completedRow: {
+    opacity: 0.55,
+  },
+  pressed: {
+    opacity: 0.75,
   },
   checkbox: {
     width: 24,

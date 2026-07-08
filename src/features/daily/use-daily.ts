@@ -14,6 +14,7 @@ import {
   startTimer,
   uncompleteInstance,
 } from '@/db/instances';
+import { listCategories } from '@/db/categories';
 import { createTask, deleteTask, excludeDate, getTasksByIds, NewTaskInput, updateTask } from '@/db/tasks';
 import { addDaysToKey, todayKey } from '@/lib/day';
 import type { TimeOfDay } from '@/db/types';
@@ -53,10 +54,13 @@ export function useDaily() {
         const instances = await listInstancesForDate(db, key);
         const tasks = await getTasksByIds(db, [...new Set(instances.map((i) => i.taskId))]);
         const taskById = new Map(tasks.map((t) => [t.id, t]));
+        const colorByCategory = new Map((await listCategories(db)).map((c) => [c.name, c.color]));
         const nextItems = instances
           .map((instance) => {
             const task = taskById.get(instance.taskId);
-            return task && !task.isSelfCare ? { instance, task } : null;
+            return task && !task.isSelfCare
+              ? { instance, task, categoryColor: colorByCategory.get(task.category) ?? null }
+              : null;
           })
           .filter((item): item is DailyItem => item !== null);
 

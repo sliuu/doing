@@ -6,7 +6,6 @@ import { ThemedText } from '@/components/themed-text';
 import { CategoryPicker } from '@/features/shared/category-picker';
 import { DurationPicker } from '@/features/shared/duration-picker';
 import { ChipRow, FormActions, FormField, FormSheet, FormTextInput, SwitchRow } from '@/features/shared/form-sheet';
-import { useCategories } from '@/features/shared/use-categories';
 import { SIZE_SECTIONS } from '@/features/todo/types';
 
 /** Create/edit form for a one-off to-do. Pass `task` to edit, omit it to create. */
@@ -23,7 +22,6 @@ export function TodoFormModal({
   onSubmit: (input: NewTaskInput) => void;
   onDelete?: () => void;
 }) {
-  const categories = useCategories();
   const [title, setTitle] = useState(task?.title ?? '');
   const [category, setCategory] = useState(task?.category ?? 'uncategorized');
   const [size, setSize] = useState<TaskSize>(task?.size ?? defaultSize);
@@ -54,7 +52,7 @@ export function TodoFormModal({
       </FormField>
 
       <FormField label="Category">
-        <CategoryPicker value={category} categories={categories} onChange={setCategory} />
+        <CategoryPicker value={category} onChange={setCategory} />
       </FormField>
 
       <FormField label="Size">

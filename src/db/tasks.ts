@@ -97,17 +97,6 @@ export async function getTasksByIds(db: SQLiteDatabase, ids: string[]): Promise<
   return rows.map(taskFromRow);
 }
 
-const SEED_CATEGORIES = ['health', 'work', 'self-care', 'spirituality', 'hobbies'];
-
-/** Seeded categories plus any distinct category already in use, sorted alphabetically. */
-export async function listCategories(db: SQLiteDatabase): Promise<string[]> {
-  const rows = await db.getAllAsync<{ category: string }>(
-    "SELECT DISTINCT category FROM tasks WHERE category != 'uncategorized'"
-  );
-  const all = new Set([...SEED_CATEGORIES, ...rows.map((r) => r.category)]);
-  return [...all].sort((a, b) => a.localeCompare(b));
-}
-
 export async function listTasks(
   db: SQLiteDatabase,
   filter: { isSelfCare?: boolean; recurring?: boolean } = {}

@@ -15,23 +15,33 @@ export function TodoRow({
 }: {
   item: TodoItem;
   todayKey: string;
-  onToggleComplete: () => void;
+  /** Receives the screen position of the tap, so completion effects can burst from it. */
+  onToggleComplete: (pos: { x: number; y: number }) => void;
   onSchedule: () => void;
   onEdit: () => void;
 }) {
   const theme = useTheme();
-  const { task, instance } = item;
+  const { task, instance, categoryColor } = item;
   const completed = instance?.completed ?? false;
   const scheduleState = scheduleStateFor(item, todayKey);
 
   const borderColor =
-    scheduleState === 'today' ? theme.today : scheduleState === 'scheduled' ? theme.scheduled : theme.backgroundSelected;
+    !completed && scheduleState === 'today'
+      ? theme.today
+      : !completed && scheduleState === 'scheduled'
+        ? theme.scheduled
+        : theme.backgroundSelected;
 
   return (
-    <Pressable onPress={onEdit} style={[styles.row, { borderColor }]}>
-      <ThemedText themeColor="textSecondary" style={styles.handle}>
-        ⋮
-      </ThemedText>
+    <Pressable
+      onPress={onEdit}
+      style={({ pressed }) => [
+        styles.row,
+        { borderColor },
+        completed && styles.completedRow,
+        pressed && styles.pressed,
+      ]}>
+      {categoryColor && <View style={[styles.categoryStripe, { backgroundColor: categoryColor }]} />}
 
       <View style={{ flex: 1 }}>
         <ThemedText
@@ -40,12 +50,12 @@ export function TodoRow({
           themeColor={completed ? 'textSecondary' : 'text'}>
           {task.title}
         </ThemedText>
-        {scheduleState === 'today' && (
+        {!completed && scheduleState === 'today' && (
           <ThemedText type="small" themeColor="today">
             ● Today
           </ThemedText>
         )}
-        {scheduleState === 'scheduled' && (
+        {!completed && scheduleState === 'scheduled' && (
           <ThemedText type="small" themeColor="scheduled">
             ● Scheduled for {instance?.scheduledDate}
           </ThemedText>
@@ -70,10 +80,10 @@ export function TodoRow({
         accessibilityState={{ checked: completed }}
         onPress={(e) => {
           e.stopPropagation();
-          onToggleComplete();
+          onToggleComplete({ x: e.nativeEvent.pageX, y: e.nativeEvent.pageY });
         }}
         style={[styles.checkbox, { borderColor: theme.primary }, completed && { backgroundColor: theme.primary }]}>
-        {completed && <ThemedText style={{ color: '#fff' }}>✓</ThemedText>}
+        {completed && <ThemedText style={{ color: theme.onPrimary }}>✓</ThemedText>}
       </Pressable>
     </Pressable>
   );
@@ -87,9 +97,20 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     borderRadius: Spacing.three,
     borderWidth: 1,
+    overflow: 'hidden',
   },
-  handle: {
-    fontSize: 16,
+  completedRow: {
+    opacity: 0.55,
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+  categoryStripe: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
   checkbox: {
     width: 24,

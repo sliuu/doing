@@ -1,13 +1,12 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 
 import { DbBootstrap } from '@/db/bootstrap';
 import { DbProvider } from '@/db/provider';
 
+/** The app is dark-only, regardless of the system light/dark setting. */
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DarkTheme}>
       <DbProvider>
         <DbBootstrap>
           <Stack screenOptions={{ headerShown: false }} />
