@@ -26,20 +26,24 @@ export function TodoRow({
   const completed = instance?.completed ?? false;
   const scheduleState = scheduleStateFor(item, todayKey);
 
+  // Only scheduled items get an outline; transparent otherwise so layout never shifts.
   const borderColor =
     !completed && scheduleState === 'today'
       ? theme.today
       : !completed && scheduleState === 'scheduled'
         ? theme.scheduled
-        : theme.backgroundSelected;
+        : 'transparent';
 
   return (
     <Pressable
       onPress={onEdit}
       style={({ pressed }) => [
         styles.row,
-        // The whole row is tinted with a translucent wash of the category color.
-        { borderColor, backgroundColor: categoryColor ? withAlpha(categoryColor, 0.16) : undefined },
+        {
+          borderColor,
+          // The whole row is tinted with a translucent wash of the category color.
+          backgroundColor: withAlpha(categoryColor ?? theme.uncategorized, 0.16),
+        },
         completed && styles.completedRow,
         pressed && styles.pressed,
       ]}>
@@ -97,7 +101,6 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     borderRadius: Spacing.three,
     borderWidth: 1,
-    overflow: 'hidden',
   },
   completedRow: {
     opacity: 0.55,

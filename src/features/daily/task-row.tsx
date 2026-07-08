@@ -49,8 +49,12 @@ export function TaskRow({
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
-        // The whole row is tinted with a translucent wash of the category color.
-        { backgroundColor: categoryColor ? withAlpha(categoryColor, 0.16) : theme.backgroundElement },
+        {
+          // The whole row is tinted with a translucent wash of the category color.
+          backgroundColor: withAlpha(categoryColor ?? theme.uncategorized, 0.16),
+          // A running timer outlines the row; transparent otherwise so layout never shifts.
+          borderColor: isRunning ? theme.today : 'transparent',
+        },
         instance.completed && styles.completedRow,
         pressed && styles.pressed,
       ]}>
@@ -100,12 +104,7 @@ export function TaskRow({
                 e.stopPropagation();
                 onToggleRunning();
               }}
-              style={[
-                styles.playButton,
-                { backgroundColor: isRunning ? theme.todaySoft : theme.primarySoft },
-                // The triangle reads as centered when nudged right slightly.
-                !isRunning && { paddingLeft: 2 },
-              ]}>
+              style={[styles.playButton, { backgroundColor: isRunning ? theme.todaySoft : theme.primarySoft }]}>
               {isRunning ? (
                 <PauseIcon size={13} color={theme.today} />
               ) : (
@@ -126,7 +125,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     padding: Spacing.three,
     borderRadius: Spacing.two,
-    overflow: 'hidden',
+    borderWidth: 1,
   },
   completedRow: {
     opacity: 0.55,

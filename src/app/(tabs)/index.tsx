@@ -79,7 +79,9 @@ export default function ToDoScreen() {
                   <Pressable
                     onPress={() => setNewTodoSize(key)}
                     style={[styles.addButton, { backgroundColor: theme.primarySoft }]}>
-                    <ThemedText themeColor="primary">+</ThemedText>
+                    <ThemedText themeColor="primary" style={styles.addGlyph}>
+                      +
+                    </ThemedText>
                   </Pressable>
                 </View>
 
@@ -173,5 +175,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
     borderRadius: Spacing.three,
+  },
+  // The + glyph sits low in its line box; nudge up so it's optically centered.
+  addGlyph: {
+    marginTop: -Spacing.half,
   },
 });

@@ -19,6 +19,8 @@ export const Colors = {
   backgroundElement: '#231b1b',
   /** Pressed/selected surfaces and input borders. */
   backgroundSelected: '#372a2a',
+  /** Neutral used to tint rows whose task has no category. */
+  uncategorized: '#99908a',
   /** The accent — muted gold. Buttons, active chips, checkboxes. */
   primary: '#ddb97f',
   /** Text/icons rendered on top of `primary`. */

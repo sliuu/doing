@@ -173,11 +173,7 @@ export default function DailyScreen() {
                   }}
                   style={({ pressed }) => [
                     styles.row,
-                    {
-                      backgroundColor: item.categoryColor
-                        ? withAlpha(item.categoryColor, 0.16)
-                        : theme.backgroundElement,
-                    },
+                    { backgroundColor: withAlpha(item.categoryColor ?? theme.uncategorized, 0.16) },
                     pressed && { opacity: 0.75 },
                   ]}>
                   <View style={[styles.checkbox, { borderColor: theme.primary }]} />
@@ -194,7 +190,9 @@ export default function DailyScreen() {
                 <Pressable
                   onPress={() => setNewTaskSection(key)}
                   style={[styles.addButton, { backgroundColor: theme.primarySoft }]}>
-                  <ThemedText themeColor="primary">+</ThemedText>
+                  <ThemedText themeColor="primary" style={styles.addGlyph}>
+                    +
+                  </ThemedText>
                 </Pressable>
               </View>
 
@@ -372,6 +370,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
     borderRadius: Spacing.three,
+  },
+  // The + glyph sits low in its line box; nudge up so it's optically centered.
+  addGlyph: {
+    marginTop: -Spacing.half,
   },
   row: {
     flexDirection: 'row',
