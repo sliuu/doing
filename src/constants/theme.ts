@@ -21,8 +21,8 @@ export const Colors = {
   backgroundSelected: '#372a2a',
   /** Warm stone gray: quiet button glyphs/labels, and the tint for uncategorized rows. */
   stone: '#99908a',
-  /** Near-black surface behind quiet buttons (+ / play / schedule). */
-  stoneSoft: '#211c1a',
+  /** Dark surface behind quiet buttons (+ / play / schedule). */
+  stoneSoft: '#2b2522',
   /** The accent — muted gold. Buttons, active chips, checkboxes. */
   primary: '#ddb97f',
   /** Text/icons rendered on top of `primary`. */
