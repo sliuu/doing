@@ -51,7 +51,7 @@ export function TaskRow({
         styles.row,
         {
           // The whole row is tinted with a translucent wash of the category color.
-          backgroundColor: withAlpha(categoryColor ?? theme.uncategorized, 0.16),
+          backgroundColor: withAlpha(categoryColor ?? theme.stone, 0.16),
           // A running timer outlines the row; transparent otherwise so layout never shifts.
           borderColor: isRunning ? theme.today : 'transparent',
         },
@@ -104,11 +104,11 @@ export function TaskRow({
                 e.stopPropagation();
                 onToggleRunning();
               }}
-              style={[styles.playButton, { backgroundColor: isRunning ? theme.todaySoft : theme.primarySoft }]}>
+              style={[styles.playButton, { backgroundColor: isRunning ? theme.todaySoft : theme.stoneSoft }]}>
               {isRunning ? (
                 <PauseIcon size={13} color={theme.today} />
               ) : (
-                <PlayIcon size={13} color={theme.primary} />
+                <PlayIcon size={13} color={theme.stone} />
               )}
             </Pressable>
           )}

@@ -78,8 +78,8 @@ export default function ToDoScreen() {
                   <ThemedText type="label">{label}</ThemedText>
                   <Pressable
                     onPress={() => setNewTodoSize(key)}
-                    style={[styles.addButton, { backgroundColor: theme.primarySoft }]}>
-                    <ThemedText themeColor="primary" style={styles.addGlyph}>
+                    style={[styles.addButton, { backgroundColor: theme.stoneSoft }]}>
+                    <ThemedText themeColor="stone" style={styles.addGlyph}>
                       +
                     </ThemedText>
                   </Pressable>

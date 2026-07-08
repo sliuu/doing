@@ -173,7 +173,7 @@ export default function DailyScreen() {
                   }}
                   style={({ pressed }) => [
                     styles.row,
-                    { backgroundColor: withAlpha(item.categoryColor ?? theme.uncategorized, 0.16) },
+                    { backgroundColor: withAlpha(item.categoryColor ?? theme.stone, 0.16) },
                     pressed && { opacity: 0.75 },
                   ]}>
                   <View style={[styles.checkbox, { borderColor: theme.primary }]} />
@@ -189,8 +189,8 @@ export default function DailyScreen() {
                 <ThemedText type="label">{label}</ThemedText>
                 <Pressable
                   onPress={() => setNewTaskSection(key)}
-                  style={[styles.addButton, { backgroundColor: theme.primarySoft }]}>
-                  <ThemedText themeColor="primary" style={styles.addGlyph}>
+                  style={[styles.addButton, { backgroundColor: theme.stoneSoft }]}>
+                  <ThemedText themeColor="stone" style={styles.addGlyph}>
                     +
                   </ThemedText>
                 </Pressable>

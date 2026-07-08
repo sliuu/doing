@@ -42,7 +42,7 @@ export function TodoRow({
         {
           borderColor,
           // The whole row is tinted with a translucent wash of the category color.
-          backgroundColor: withAlpha(categoryColor ?? theme.uncategorized, 0.16),
+          backgroundColor: withAlpha(categoryColor ?? theme.stone, 0.16),
         },
         completed && styles.completedRow,
         pressed && styles.pressed,
@@ -72,8 +72,8 @@ export function TodoRow({
             e.stopPropagation();
             onSchedule();
           }}
-          style={[styles.scheduleButton, { backgroundColor: theme.primarySoft }]}>
-          <ThemedText type="small" themeColor="primary">
+          style={[styles.scheduleButton, { backgroundColor: theme.stoneSoft }]}>
+          <ThemedText type="small" themeColor="stone">
             Schedule
           </ThemedText>
         </Pressable>

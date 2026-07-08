@@ -58,8 +58,8 @@ export default function SelfCareScreen() {
                   <ThemedText type="label">{label}</ThemedText>
                   <Pressable
                     onPress={() => setNewSection(key)}
-                    style={[styles.addButton, { backgroundColor: theme.primarySoft }]}>
-                    <ThemedText themeColor="primary" style={styles.addGlyph}>
+                    style={[styles.addButton, { backgroundColor: theme.stoneSoft }]}>
+                    <ThemedText themeColor="stone" style={styles.addGlyph}>
                       +
                     </ThemedText>
                   </Pressable>

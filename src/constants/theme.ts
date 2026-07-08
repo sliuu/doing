@@ -19,8 +19,10 @@ export const Colors = {
   backgroundElement: '#231b1b',
   /** Pressed/selected surfaces and input borders. */
   backgroundSelected: '#372a2a',
-  /** Neutral used to tint rows whose task has no category. */
-  uncategorized: '#99908a',
+  /** Warm stone gray: quiet button glyphs/labels, and the tint for uncategorized rows. */
+  stone: '#99908a',
+  /** Near-black surface behind quiet buttons (+ / play / schedule). */
+  stoneSoft: '#211c1a',
   /** The accent — muted gold. Buttons, active chips, checkboxes. */
   primary: '#ddb97f',
   /** Text/icons rendered on top of `primary`. */
