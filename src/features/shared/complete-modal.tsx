@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { getLiveDurationSeconds } from '@/db/instances';
 import { formatDurationShort } from '@/lib/format';
 import { DatePickerField } from '@/features/shared/date-picker-field';
 import { DurationPicker } from '@/features/shared/duration-picker';
@@ -33,7 +34,11 @@ export function CompleteModal({
   onAddTime?: (deltaSeconds: number) => void;
 }) {
   const theme = useTheme();
-  const [loggedSeconds, setLoggedSeconds] = useState(instance?.currentDurationSeconds ?? 0);
+  // Seed from the LIVE duration (frozen at open): if the timer is still running, the elapsed
+  // time isn't folded into currentDurationSeconds until the instance is paused/completed.
+  const [loggedSeconds, setLoggedSeconds] = useState(() =>
+    instance ? getLiveDurationSeconds(instance, Date.now()) : 0
+  );
   const [dateKey, setDateKey] = useState(defaultDateKey);
 
   // Writes the new total through but never closes the dialog — the user may still want to "Mark done" afterward.
