@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 
-import { GearIcon, UserIcon } from '@/components/icons';
+import { UserIcon } from '@/components/icons';
 import { TabBarButton, TabBarIcon } from '@/components/tab-bar-icon';
 import { Fonts } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,15 +23,6 @@ export default function TabsLayout() {
         options={{
           title: 'To-dos',
           tabBarIcon: ({ focused }) => <TabBarIcon glyph="▤" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="tools"
-        options={{
-          title: 'Tools',
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon focused={focused} render={(color) => <GearIcon size={19} color={color} />} />
-          ),
         }}
       />
       <Tabs.Screen

@@ -35,7 +35,10 @@ export function DurationBarChart({ stats }: { stats: TaskStat[] }) {
               <View
                 style={[
                   styles.fill,
-                  { backgroundColor: theme.primary, width: `${(stat.totalDurationSeconds / maxDuration) * 100}%` },
+                  {
+                    backgroundColor: stat.categoryColor ?? theme.primary,
+                    width: `${(stat.totalDurationSeconds / maxDuration) * 100}%`,
+                  },
                 ]}
               />
             </View>

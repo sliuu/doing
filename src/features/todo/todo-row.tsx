@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { withAlpha } from '@/lib/color';
 
 import { scheduleStateFor, TodoItem } from '@/features/todo/types';
 
@@ -37,12 +38,11 @@ export function TodoRow({
       onPress={onEdit}
       style={({ pressed }) => [
         styles.row,
-        { borderColor },
+        // The whole row is tinted with a translucent wash of the category color.
+        { borderColor, backgroundColor: categoryColor ? withAlpha(categoryColor, 0.16) : undefined },
         completed && styles.completedRow,
         pressed && styles.pressed,
       ]}>
-      {categoryColor && <View style={[styles.categoryStripe, { backgroundColor: categoryColor }]} />}
-
       <View style={{ flex: 1 }}>
         <ThemedText
           type="default"
@@ -104,13 +104,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.75,
-  },
-  categoryStripe: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
   },
   checkbox: {
     width: 24,

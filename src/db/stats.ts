@@ -2,6 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { dateKeyFor, todayKey, weekdayForKey, addDaysToKey } from '@/lib/day';
 
+import { listCategories } from '@/db/categories';
 import { Task } from '@/db/types';
 import { getTasksByIds } from '@/db/tasks';
 
@@ -11,6 +12,8 @@ export interface TaskStat {
   task: Task;
   completions: number;
   totalDurationSeconds: number;
+  /** The task's category color (null for uncategorized), for charts. */
+  categoryColor: string | null;
 }
 
 interface CompletedRow {
@@ -58,11 +61,12 @@ export async function getTaskStats(
 
   const tasks = await getTasksByIds(db, [...byTask.keys()]);
   const taskById = new Map(tasks.map((t) => [t.id, t]));
+  const colorByCategory = new Map((await listCategories(db)).map((c) => [c.name, c.color]));
 
   return [...byTask.entries()]
     .map(([taskId, agg]) => {
       const task = taskById.get(taskId);
-      return task ? { task, ...agg } : null;
+      return task ? { task, ...agg, categoryColor: colorByCategory.get(task.category) ?? null } : null;
     })
     .filter((stat): stat is TaskStat => stat !== null)
     .sort((a, b) => b.completions - a.completions || b.totalDurationSeconds - a.totalDurationSeconds);

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
@@ -14,7 +14,6 @@ import { DailyItem, DayMode, effectiveExpectedMinutes } from '@/features/daily/t
 import { PieProgress } from '@/features/daily/pie-progress';
 import { DurationPicker } from '@/features/shared/duration-picker';
 
-const ADJUST_STEPS_SECONDS = [-60, 60, 600];
 const PIE_SIZE = 200;
 const GONG_SOUND = require('../../../assets/sounds/gong.wav');
 
@@ -48,6 +47,9 @@ export function TimerModal({
   const fraction = expectedSeconds ? liveSeconds / expectedSeconds : 0;
   const remainingSeconds = expectedSeconds === null ? liveSeconds : Math.max(0, expectedSeconds - liveSeconds);
   const overtimeSeconds = expectedSeconds === null ? 0 : Math.max(0, liveSeconds - expectedSeconds);
+
+  // The inline "add unlogged time" flow: null when hidden, otherwise the minutes picked so far.
+  const [addingMinutes, setAddingMinutes] = useState<number | null>(null);
 
   const gongPlayer = useAudioPlayer(GONG_SOUND);
   // Skip the chime if the modal is opened already past the expected duration — it should only fire on the live transition.
@@ -137,19 +139,34 @@ export function TimerModal({
             </ThemedText>
           </Pressable>
 
-          <View style={styles.adjustRow}>
-            {ADJUST_STEPS_SECONDS.map((delta) => (
-              <Pressable
-                key={delta}
-                onPress={() => onAdjust(delta)}
-                style={[styles.adjustButton, { backgroundColor: theme.backgroundElement }]}>
-                <ThemedText type="small">
-                  {delta > 0 ? '+' : ''}
-                  {delta / 60}m
+          {addingMinutes === null ? (
+            <Pressable onPress={() => setAddingMinutes(0)} style={styles.addTimeLink} hitSlop={Spacing.one}>
+              <ThemedText type="small" themeColor="textSecondary">
+                + Add unlogged time
+              </ThemedText>
+            </Pressable>
+          ) : (
+            <View style={styles.addTimeRow}>
+              <View style={{ flex: 1 }}>
+                <DurationPicker totalMinutes={addingMinutes} onChange={setAddingMinutes} />
+              </View>
+              <Pressable onPress={() => setAddingMinutes(null)} style={styles.addTimeAction}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Cancel
                 </ThemedText>
               </Pressable>
-            ))}
-          </View>
+              <Pressable
+                onPress={() => {
+                  if (addingMinutes > 0) onAdjust(addingMinutes * 60);
+                  setAddingMinutes(null);
+                }}
+                style={[styles.addTimeAction, { backgroundColor: theme.primary, borderRadius: Spacing.two }]}>
+                <ThemedText type="small" style={{ color: theme.onPrimary }}>
+                  Add
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
 
           <View style={styles.actions}>
             <Pressable onPress={onClose} style={styles.actionButton}>
@@ -224,15 +241,19 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     alignItems: 'center',
   },
-  adjustRow: {
+  addTimeLink: {
+    alignSelf: 'center',
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
+  },
+  addTimeRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    alignItems: 'center',
     gap: Spacing.two,
   },
-  adjustButton: {
-    paddingHorizontal: Spacing.three,
+  addTimeAction: {
+    paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
-    borderRadius: Spacing.two,
   },
   actions: {
     flexDirection: 'row',

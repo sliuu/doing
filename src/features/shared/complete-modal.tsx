@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -9,8 +9,6 @@ import { formatDurationShort } from '@/lib/format';
 import { DatePickerField } from '@/features/shared/date-picker-field';
 import { DurationPicker } from '@/features/shared/duration-picker';
 import type { Task, TaskInstance } from '@/db/types';
-
-const QUICK_ADJUST_MINUTES = [15, 30, 60];
 
 export interface CompleteOpts {
   durationSeconds?: number;
@@ -36,33 +34,19 @@ export function CompleteModal({
 }) {
   const theme = useTheme();
   const [loggedSeconds, setLoggedSeconds] = useState(instance?.currentDurationSeconds ?? 0);
-  const [addMinutes, setAddMinutes] = useState('');
   const [dateKey, setDateKey] = useState(defaultDateKey);
 
-  const parsedAddSeconds = () => {
-    const parsed = Number(addMinutes);
-    return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 60) : 0;
-  };
-
-  // Folds elapsed/added time into the running total but never closes the dialog — the user may still want to "Mark done" afterward.
-  const adjustSeconds = (deltaSeconds: number) => {
+  // Writes the new total through but never closes the dialog — the user may still want to "Mark done" afterward.
+  const setLoggedTotal = (totalMinutes: number) => {
+    const deltaSeconds = Math.max(0, totalMinutes) * 60 - loggedSeconds;
     if (deltaSeconds === 0) return;
     onAddTime?.(deltaSeconds);
     setLoggedSeconds((s) => Math.max(0, s + deltaSeconds));
   };
 
-  const setLoggedTotal = (totalMinutes: number) => {
-    adjustSeconds(Math.max(0, totalMinutes) * 60 - loggedSeconds);
-  };
-
-  const handleAddTime = () => {
-    adjustSeconds(parsedAddSeconds());
-    setAddMinutes('');
-  };
-
   const handleConfirm = () => {
     onConfirm({
-      durationSeconds: task.tracksDuration ? loggedSeconds + parsedAddSeconds() : undefined,
+      durationSeconds: task.tracksDuration ? loggedSeconds : undefined,
       completedDateKey: allowDateSelection ? dateKey : undefined,
     });
   };
@@ -88,61 +72,13 @@ export function CompleteModal({
                 <ThemedText type="small" themeColor="textSecondary">
                   Logged so far
                 </ThemedText>
-                <ThemedText style={styles.loggedTime}>
-                  {formatDurationShort(loggedSeconds + parsedAddSeconds())}
-                </ThemedText>
-
-                <View style={styles.quickAdjustRow}>
-                  {QUICK_ADJUST_MINUTES.map((m) => (
-                    <Pressable
-                      key={`sub-${m}`}
-                      onPress={() => adjustSeconds(-m * 60)}
-                      style={[styles.quickAdjustChip, { backgroundColor: theme.backgroundSelected }]}>
-                      <ThemedText type="small" style={{ color: theme.danger }}>
-                        -{formatDurationShort(m * 60)}
-                      </ThemedText>
-                    </Pressable>
-                  ))}
-                  {QUICK_ADJUST_MINUTES.map((m) => (
-                    <Pressable
-                      key={`add-${m}`}
-                      onPress={() => adjustSeconds(m * 60)}
-                      style={[styles.quickAdjustChip, { backgroundColor: theme.primarySoft }]}>
-                      <ThemedText type="small" themeColor="primary">
-                        +{formatDurationShort(m * 60)}
-                      </ThemedText>
-                    </Pressable>
-                  ))}
-                </View>
+                <ThemedText style={styles.loggedTime}>{formatDurationShort(loggedSeconds)}</ThemedText>
 
                 <View style={styles.setExactColumn}>
                   <ThemedText type="small" themeColor="textSecondary">
-                    Or set exactly
+                    Log custom time
                   </ThemedText>
                   <DurationPicker totalMinutes={Math.round(loggedSeconds / 60)} onChange={setLoggedTotal} />
-                </View>
-
-                <View style={styles.customAddRow}>
-                  <TextInput
-                    value={addMinutes}
-                    onChangeText={setAddMinutes}
-                    placeholder="0"
-                    placeholderTextColor={theme.textSecondary}
-                    keyboardType="number-pad"
-                    style={[styles.smallInput, { color: theme.text, borderColor: theme.backgroundSelected }]}
-                  />
-                  <ThemedText type="small" themeColor="textSecondary">
-                    min
-                  </ThemedText>
-                  {onAddTime && parsedAddSeconds() > 0 && (
-                    <Pressable
-                      onPress={handleAddTime}
-                      style={[styles.addTimeButton, { backgroundColor: theme.primarySoft }]}>
-                      <ThemedText type="small" themeColor="primary">
-                        Add time
-                      </ThemedText>
-                    </Pressable>
-                  )}
                 </View>
               </View>
             )}
@@ -187,12 +123,6 @@ const styles = StyleSheet.create({
   field: {
     gap: Spacing.one,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: Spacing.two,
-    padding: Spacing.two,
-    fontSize: 16,
-  },
   durationCard: {
     alignItems: 'center',
     gap: Spacing.two,
@@ -205,40 +135,9 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     fontWeight: '600',
   },
-  quickAdjustRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: Spacing.two,
-  },
-  quickAdjustChip: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.one,
-    borderRadius: Spacing.three,
-  },
   setExactColumn: {
     width: '100%',
     gap: Spacing.one,
-  },
-  customAddRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.one,
-  },
-  smallInput: {
-    width: 44,
-    borderWidth: 1,
-    borderRadius: Spacing.two,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 4,
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  addTimeButton: {
-    marginLeft: Spacing.one,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 4,
-    borderRadius: Spacing.two,
   },
   actions: {
     flexDirection: 'row',

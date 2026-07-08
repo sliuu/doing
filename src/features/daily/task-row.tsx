@@ -5,6 +5,7 @@ import { PauseIcon, PlayIcon } from '@/components/icons';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getLiveDurationSeconds } from '@/db/instances';
+import { withAlpha } from '@/lib/color';
 import { formatDurationShort, formatTimer } from '@/lib/format';
 
 import { DailyItem, DayMode, effectiveExpectedMinutes } from '@/features/daily/types';
@@ -48,12 +49,11 @@ export function TaskRow({
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
-        { backgroundColor: theme.backgroundElement },
+        // The whole row is tinted with a translucent wash of the category color.
+        { backgroundColor: categoryColor ? withAlpha(categoryColor, 0.16) : theme.backgroundElement },
         instance.completed && styles.completedRow,
         pressed && styles.pressed,
       ]}>
-      {categoryColor && <View style={[styles.categoryStripe, { backgroundColor: categoryColor }]} />}
-
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: instance.completed }}
@@ -133,13 +133,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.75,
-  },
-  categoryStripe: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
   },
   checkbox: {
     width: 24,

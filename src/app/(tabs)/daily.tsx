@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getLiveDurationSeconds } from '@/db/instances';
+import { withAlpha } from '@/lib/color';
 import { formatDateHeader, formatTimer } from '@/lib/format';
 import type { TimeOfDay } from '@/db/types';
 
@@ -146,7 +147,8 @@ export default function DailyScreen() {
             </Pressable>
           )}
 
-          <View style={styles.modeRow}>
+          {/* Segmented switcher for the day mode — the pill border makes it read as one control. */}
+          <View style={[styles.modeSwitcher, { borderColor: theme.backgroundSelected }]}>
             {DAY_MODE_OPTIONS.map((opt) => (
               <Pressable
                 key={opt.key}
@@ -171,12 +173,13 @@ export default function DailyScreen() {
                   }}
                   style={({ pressed }) => [
                     styles.row,
-                    { backgroundColor: theme.backgroundElement },
+                    {
+                      backgroundColor: item.categoryColor
+                        ? withAlpha(item.categoryColor, 0.16)
+                        : theme.backgroundElement,
+                    },
                     pressed && { opacity: 0.75 },
                   ]}>
-                  {item.categoryColor && (
-                    <View style={[styles.categoryStripe, { backgroundColor: item.categoryColor }]} />
-                  )}
                   <View style={[styles.checkbox, { borderColor: theme.primary }]} />
                   <ThemedText style={{ flex: 1 }}>{item.task.title}</ThemedText>
                 </Pressable>
@@ -334,10 +337,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  modeRow: {
+  modeSwitcher: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: Spacing.one,
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderRadius: Spacing.five,
+    padding: Spacing.half,
+    gap: Spacing.half,
   },
   runningBanner: {
     flexDirection: 'row',
@@ -373,14 +379,6 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     padding: Spacing.three,
     borderRadius: Spacing.two,
-    overflow: 'hidden',
-  },
-  categoryStripe: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
   },
   checkbox: {
     width: 24,
