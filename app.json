@@ -9,9 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.anonymous.doing"
+      "bundleIdentifier": "com.sliuu.doing"
     },
     "android": {
+      "package": "com.sliuu.doing",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
